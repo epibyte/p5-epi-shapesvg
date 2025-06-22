@@ -9,4 +9,8 @@ console.log(p1.toString());
 console.log(p2.toString());
 console.log(l1.toString()); // Line(Point(10, 20) -> Point(30, 40))
 console.log('Length:', l1.length());
+<<<<<<< HEAD
 console.log('Midpoint:', l1.midPt().toString());
+=======
+console.log('Midpoint:', l1.midPt().toString());
+>>>>>>> 9e5460e9f73f30f518f6642937292b69848cbcbb
