@@ -1,6 +1,5 @@
 // v0.1 getRotatedPt(pt, rotation) 
 
-
 function getRotatedPt(pt, rotation) { // older versions have getRotatedPt(px, py, rotation) 
 	// Apply manual rotation if required
 	if (rotation) {
