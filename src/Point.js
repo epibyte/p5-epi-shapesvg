@@ -1,14 +1,22 @@
 // Class Point: represents a 2D point
 export default class Point {
-  constructor(x, y) {
+  constructor(x = 0, y = 0) {
+    this.set(x, y);
+  }
+
+  copy() {
+    return new Point(this.x, this.y);
+  }
+  
+  set(x, y) {
     this.x = x;
     this.y = y;
   }
-
-  static new(x = 0, y = 0) {
-    return new Point(x, y);
-  }
   
+  equals(otherPoint, epsilon = 1e-6) {
+    return Math.abs(this.x - otherPoint.x) < epsilon && Math.abs(this.y - otherPoint.y) < epsilon;
+  }
+
   distanceTo(otherPoint) {
     const dx = this.x - otherPoint.x;
     const dy = this.y - otherPoint.y;
@@ -24,6 +32,10 @@ export default class Point {
 
   translate(vec) {
     return new Point(this.x + vec.x, this.y + vec.y);
+  }
+
+  scale(scl) {
+	  return {x: this.x * scl, y: this.y * scl};
   }
 
   rotate(angle, origin = null) {
