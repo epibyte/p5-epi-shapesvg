@@ -1,4 +1,4 @@
- // Class Point: represents a 2D point
+// Class Point: represents a 2D point
 export default class Point {
   constructor(x, y) {
     this.x = x;
@@ -22,15 +22,32 @@ export default class Point {
     );
   }
 
+  translate(vec) {
+    return new Point(this.x + vec.x, this.y + vec.y);
+  }
+
   rotate(angle, origin = null) {
     if (origin == null) origin = new Point();
 
-    let dx = pt.x - origin.x;
-		let dy = pt.y - origin.y;
-		let rotatedX = origin.x + dx * cos(angle) - dy * sin(angle);
-		let rotatedY = origin.y + dx * sin(angle) + dy * cos(angle);
-		
+    let dx = this.x - origin.x;
+    let dy = this.y - origin.y;
+    let rotatedX = origin.x + dx * Math.cos(angle) - dy * Math.sin(angle);
+    let rotatedY = origin.y + dx * Math.sin(angle) + dy * Math.cos(angle);
+
     return new Point(rotatedX, rotatedY);
+  }
+
+  // Check if a point is (just) in area
+  isOnSegmentArea(seg) {
+    const epsilon = 1e-6; // small tolerance for floating-point errors
+    const p1 = seg.pt1;
+    const p2 = seg.pt2;
+    return (
+      this.x >= Math.min(p1.x, p2.x) - epsilon &&
+      this.x <= Math.max(p1.x, p2.x) + epsilon &&
+      this.y >= Math.min(p1.y, p2.y) - epsilon &&
+      this.y <= Math.max(p1.y, p2.y) + epsilon
+    );
   }
 
   toString() {

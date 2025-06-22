@@ -27,6 +27,44 @@ export default class Line {
     );
   }
 
+  // Line segment intersection algorithm
+  segmentIntersection(otherLine) {
+    const epsilon = 1e-6;
+
+    let p1 = this.pt1;
+    let p2 = this.pt2;
+    let p3 = otherLine.pt1;
+    let p4 = otherLine.pt2;
+
+    let a1 = p2.y - p1.y;
+    let b1 = p1.x - p2.x;
+    let c1 = a1 * p1.x + b1 * p1.y;
+
+    let a2 = p4.y - p3.y;
+    let b2 = p3.x - p4.x;
+    let c2 = a2 * p3.x + b2 * p3.y;
+
+    let denominator = a1 * b2 - a2 * b1;
+
+    // Handle parallel lines with epsilon tolerance
+    if (Math.abs(denominator) < epsilon) {
+      return null;
+    }
+
+    const intersectPt = new Point(
+      (b2 * c1 - b1 * c2) / denominator,
+      (a1 * c2 - a2 * c1) / denominator
+    );
+
+    // Check if the intersection point is within both segments
+    if (intersectPt.isOnSegmentArea(this) &&
+        intersectPt.isOnSegmentArea(otherLine)) {
+      return intersectPt;
+    }
+
+    return null;
+  }
+
   toString() {
     return `Line(${this.pt1.toString()} -> ${this.pt2.toString()})`;
   }

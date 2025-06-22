@@ -267,37 +267,7 @@ function insertIntersectionPoint(arr, newPt) {
 	return true;
 }
 
-// Line segment intersection algorithm
-function lineSegmentIntersection(p1, p2, p3, p4) {
-  const epsilon = 1e-6;
-
-  let a1 = p2.y - p1.y;
-  let b1 = p1.x - p2.x;
-  let c1 = a1 * p1.x + b1 * p1.y;
-
-  let a2 = p4.y - p3.y;
-  let b2 = p3.x - p4.x;
-  let c2 = a2 * p3.x + b2 * p3.y;
-
-  let denominator = a1 * b2 - a2 * b1;
-
-  // Handle parallel lines with epsilon tolerance
-  if (Math.abs(denominator) < epsilon) {
-    return null;
-  }
-
-  let intersectX = (b2 * c1 - b1 * c2) / denominator;
-  let intersectY = (a1 * c2 - a2 * c1) / denominator;
-
-  // Check if the intersection point is within both segments
-  if (isPointOnSegment(intersectX, intersectY, p1, p2) &&
-      isPointOnSegment(intersectX, intersectY, p3, p4)) {
-    return { x: intersectX, y: intersectY };
-  }
-
-  return null;
-}
-
+  
 // Check if a point is on a line segment
 function isPointOnSegment(x, y, p1, p2) {
   const epsilon = 1e-6; // S mall tolerance for floating-point errors
