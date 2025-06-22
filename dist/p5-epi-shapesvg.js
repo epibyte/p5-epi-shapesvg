@@ -110,7 +110,7 @@ function clipPtsMultipoly(ptsArr, multiPoly, rotation = null) {
     if (isPointInMultiPoly(px, py, multiPoly)) {
       if (!segmentStarted) {
         beginShape();
-				svgStr += `<polyline points="`;
+				 
         segmentStarted = true;
 				if (i > 0) {
 					const qt = ptsArr[i-1];
@@ -124,7 +124,7 @@ function clipPtsMultipoly(ptsArr, multiPoly, rotation = null) {
 							qx = rotPt.x;
 							qy = rotPt.y;
 						}
-						if (isPointInMultiPoly(qx, qy, multiPoly)) {
+						if (isPointInMultiPoly(qx, qy , multiPoly)) {
 							vertex(qx, qy);
 							svgStr += `${nf(qx,0,3)},${nf(qy,0,3)} `;
 							break;
@@ -156,7 +156,7 @@ function clipArc(x, y, w, h, start, stop, boundaryPoints, rotation = null) {
 	let segmentStarted = false;
 
 	const l = 5;
-	const u = TAU*(w+h)/4;
+	const u = TAU * (w + h) / 4;
 	const num = ~~((stop - start) / 0.01);
 	const dlt_angle = (stop - start) / num; // min(HALF_PI, TAU/(u/l)); //
 	const pts = [];
@@ -172,7 +172,7 @@ function clipArc(x, y, w, h, start, stop, boundaryPoints, rotation = null) {
 			const rotPt = getRotatedPt(px, py, rotation);
       px = rotPt.x;
       py = rotPt.y;
-    }
+    }  
 
     // Check if the point is inside the polygon boundary
     if (isPointInPolygon(px, py, boundaryPoints)) {
