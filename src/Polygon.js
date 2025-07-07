@@ -23,8 +23,32 @@ export default class Polygon {
       const y = center.y + radius * Math.sin(angle);
       pts.push(new Point(x, y));
     }
+
     return new Polygon(pts, true);
   }
+  
+  static createFromArc(center, dim, startAngle, stopAngle, rotation = null) {
+  	const l = 5;
+    const u = TAU*(w+h)/4;
+    const num = ~~((stop - start) / 0.01);
+    const dlt_angle = (stop - start) / num; // min(HALF_PI, TAU/(u/l)); //
+    const pts = [];
+    for (let i = 0, angle = start; i <= num; i++, angle += dlt_angle) {
+      if (i === num) angle = stop;
+      
+      // Compute point on the unrotated ellipse
+      let pt = new Point(x + (w / 2) * cos(angle), y + (h / 2) * sin(angle));
+
+      // Apply manual rotation if required
+      if (rotation) {
+        pt = pt.rotate(rotation);
+      }
+      pts.push(pt);
+    }
+    
+    return new Polygon(pts, true);
+  }
+
 
   addPoint(pt) {
     if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
@@ -83,71 +107,7 @@ export default class Polygon {
     }
   }
 
-  // Clip points array against a polygon (multiPoly) and return SVG string
-  ___clipPts(ptsArr, rotation = null) {
-    let segmentStarted = false;
-    
-    for (let i = 0; i < ptsArr.length; i++) {
-      const pt = ptsArr[i];
-      // let px = pt.x;
-      // let py = pt.y;
-      
-      // Apply manual rotation if required
-      if (rotation) {
-        // const rotPt = getRotatedPt(pt, rotation);
-        // px = rotPt.x;
-        // py = rotPt.y;
-        pt = pt.rotate(rotation);
-      }
-      
-      // Check if the point is inside the polygon boundary
-      if (this.isPointIn(pt)) {
-        if (!segmentStarted) {
-          beginShape();
-          svgStr += `<polyline points="`;
-          segmentStarted = true;
-          if (i > 0) {
-            const qt = ptsArr[i-1];
-            const len = dist(qt.x, qt.y, pt.x, pt.y);
-            const df = 1/len;
-            for (let f = df; f < 1; f += df) {
-              // let qx = lerp(qt.x, pt.x, f);
-              // let qy = lerp(qt.y, pt.y, f);
-              qt = qt.lerp(pt, f);
-              if (rotation) {
-                // const rotPt = getRotatedPt({x: qx, y: qy}, rotation);
-                // qx = rotPt.x;
-                // qy = rotPt.y;
-                qt = qt.rotate(rotation);
-              }
-              if (this.isPointIn(qt)) {
-                vertex(qt.x, qt.y);
-                svgStr += `${nf(qt.x,0,3)},${nf(qt.y,0,3)} `;
-                break;
-              }
-            }
-          }
-        }
-        vertex(pt.x, pt.y);
-        svgStr += `${nf(pt.x,0,3)},${nf(pt.y,0,3)} `;
-
-      } else {
-
-        if (segmentStarted) {
-          endShape();
-          svgStr += `" />\n`;
-          segmentStarted = false;
-        }
-      }
-
-    } // for pts
-    
-    if (segmentStarted) {
-      endShape();
-      svgStr += `" />\n`;
-    }
-  }
-
+  // Clip points against the polygon boundary
   clipPts(ptsArr, rotation = null) {
     const segmentPoly = new Polygon();
     let currentSegment = [];
@@ -256,5 +216,73 @@ export default class Polygon {
     }
     
     return isInside;
+  }
+
+
+  clipLine(p1, p2, inside = true) {
+    let intersectionPoints = [];
+
+    // Check intersections with all polygon edges
+    const boundaryPts = this.pts[0]; // Assuming the first ring is the boundary
+    for (let i = 0; i < boundaryPts.length - 1; i++) {
+      let j = (i + 1) % boundaryPts.length;  // next vertex, wrapping around
+      let edgeStart = boundaryPts[i];
+      let edgeEnd = boundaryPts[j];
+
+      const l1 = new Line(p1, p2);
+      const l2 = new Line(edgeStart, edgeEnd);
+      let intersection = l1.segmentIntersection(l2);
+      if (intersection) this.insertIntersectionPoint(intersectionPoints, intersection); // intersectionPoints.push(intersection);
+    }
+
+    // Check if endpoints are inside the polygon
+    let p1Inside = this.isPointInPtsArr(p1, boundaryPts); // isPointInPolygon(p1.x, p1.y, boundaryPts);
+    let p2Inside = this.isPointInPtsArr(p2, boundaryPts); // isPointInPolygon(p2.x, p2.y, boundaryPts);
+
+    // Add the endpoints if they are inside/outside the polygon
+    if (inside) {	
+      if (p1Inside) this.insertIntersectionPoint(intersectionPoints, p1); // intersectionPoints.push(p1);
+      if (p2Inside) this.insertIntersectionPoint(intersectionPoints, p2); // intersectionPoints.push(p2);
+    } else {
+      if (!p1Inside) this.insertIntersectionPoint(intersectionPoints, p1); // intersectionPoints.push(p1);
+      if (!p2Inside) this.insertIntersectionPoint(intersectionPoints, p2); // intersectionPoints.push(p2);
+    }
+    // Sort intersection points by distance from p1
+    // intersectionPoints.sort((a, b) => dist(p1.x, p1.y, a.x, a.y) - dist(p1.x, p1.y, b.x, b.y));
+    intersectionPoints.sort((a, b) => p1.distanceToSq(a) - p1.distanceToSq(b));
+    
+    const debugMode = (intersectionPoints.length % 2 === 1);
+    if (debugMode) {
+      console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
+      console.log(boundaryPts);
+      console.log(intersectionPoints);
+    }
+    
+    // Draw all valid line segments inside the polygon
+    // svgStr += `<g>\n`
+    for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
+      let start = intersectionPoints[i];
+      let end = intersectionPoints[i + 1];
+      // const dst = dist(start.x, start.y, end.x, end.y);
+      // if (debugMode) {stroke("red")} else {stroke("silver")}
+      line(start.x, start.y, end.x, end.y);
+      svgStr += `<line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`;
+      // if (debugMode) console.log(`.. ${nf(dst, 0, 3)}: <line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`);
+    }
+
+    // svgStr += `</g>\n`
+    return intersectionPoints;
+  }
+  insertIntersectionPoint(arr, newPt) {
+    const epsilon = 1e-6;
+    
+    for (const p of arr) {
+      if (dist(p.x, p.y, newPt.x, newPt.y) < epsilon) {
+        return false;
+      }
+    }
+    
+    arr.push(newPt);
+    return true;
   }
 }
