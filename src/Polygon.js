@@ -12,12 +12,23 @@ export default class Polygon {
         this.closeLastPath()
       }
     }
-
-    console.log(this.pts);
   }
   closeLastPath() {
     if (this.pts.length) {
       this.pts[this.pts.length-1].push(this.pts[this.pts.length-1][0]); // ensure first point is same as last point
+    }
+  }
+  addPoint(pt) {
+    if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
+    this.pts[this.pts.length-1].push(pt);
+  }
+  addPtsArr(ptsArr, closePath = false) {
+    if (!Array.isArray(ptsArr) || !ptsArr.every(pt => pt instanceof Point)) {
+      // throw new Error('addPtsArr expects an array of Point instances.');
+    }
+    this.pts.push([...ptsArr]);
+    if (closePath && ptsArr.length) {
+      this.closeLastPath();
     }
   }
 
@@ -59,20 +70,6 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
 
-
-  addPoint(pt) {
-    if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
-    this.pts[this.pts.length-1].push(pt);
-  }
-  addPtsArr(ptsArr, closePath = false) {
-    if (!Array.isArray(ptsArr) || !ptsArr.every(pt => pt instanceof Point)) {
-      // throw new Error('addPtsArr expects an array of Point instances.');
-    }
-    this.pts.push([...ptsArr]);
-    if (closePath && ptsArr.length) {
-      this.closeLastPath();
-    }
-  }
 
   length() {
     let totalLength = 0;
@@ -301,4 +298,53 @@ export default class Polygon {
     arr.push(newPt);
     return true;
   }
+
+  // Clip another polygon against this polygon, returning the merged result
+  clipPoly(otherPoly, inside = true) {
+    const mergedPoly = new Polygon();
+
+    for (const ring of otherPoly.pts) {
+      if (ring.length < 2) continue;
+      for (let i = 0; i < ring.length - 1; i++) {
+        const p1 = ring[i];
+        const p2 = ring[i + 1];
+        const segmentPoly = this.clipLine(p1, p2, inside);
+        for (const segRing of segmentPoly.pts) {
+          if (segRing.length > 0) {
+            mergedPoly.addPtsArr(segRing);
+          }
+        }
+      }
+    }
+    mergedPoly.optimizePoly(); // Merge rings if last point of one equals first point of next  
+    return mergedPoly;
+  }
+  
+  // Merge rings if last point of one equals first point of next
+  optimizePoly() {
+    if (this.pts.length < 2) return;
+
+    let optimized = [];
+    let current = [...this.pts[0]];
+
+    for (let i = 1; i < this.pts.length; i++) {
+      const prevRing = current;
+      const nextRing = this.pts[i];
+      if (
+        prevRing.length > 0 &&
+        nextRing.length > 0 &&
+        prevRing[prevRing.length - 1].equals(nextRing[0])
+      ) {
+        // Merge: skip duplicate point
+        current = current.concat(nextRing.slice(1));
+      } else {
+        optimized.push(current);
+        current = [...nextRing];
+      }
+    }
+    optimized.push(current);
+
+    this.pts = optimized;
+  }
+
 }
