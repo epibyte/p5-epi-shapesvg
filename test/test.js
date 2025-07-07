@@ -47,3 +47,9 @@ console.log('Boundary Polygon:', boundaryPts.toString(), boundaryPts.pts[0]);
 // const clippedTria1 = tria1.clipPts(boundaryPts.pts[0]);
 const clippedTria1 = boundaryPts.clipPts(tria1.pts[0]);
 console.log('Clipped Triangle 1:', clippedTria1.toSVG());
+
+console.log('\nclipLine\n');
+const clipLine = new Line(new Point(0, 50), new Point(100, 50 ));
+const clipBoundary = new Polygon([new Point(0, 90), new Point(25, 10), new Point(50, 80), new Point(75, 10), new Point(100, 90)], true);
+const clippedLine = clipBoundary.clipLine(clipLine.pt1, clipLine.pt2);
+console.log('Clipped Line:', clippedLine);
