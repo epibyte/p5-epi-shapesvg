@@ -168,11 +168,11 @@ function clipArc(x, y, w, h, start, stop, boundaryPoints, rotation = null) {
     let py = y + (h / 2) * sin(angle);
 
     // Apply manual rotation if required
-    if (rotation) {
-			const rotPt = getRotatedPt(px, py, rotation);
-      px = rotPt.x;
-      py = rotPt.y;
-    }
+	if (rotation) {
+			const rotPt = getRotatedPt({ x: px, y: py }, rotation);
+	  px = rotPt.x;
+	  py = rotPt.y;
+	}
 
     // Check if the point is inside the polygon boundary
     if (isPointInPolygon(px, py, boundaryPoints)) {
@@ -231,7 +231,7 @@ function clipLine(p1, p2, boundaryPts, inside = true) {
 	// Sort intersection points by distance from p1
   intersectionPoints.sort((a, b) => dist(p1.x, p1.y, a.x, a.y) - dist(p1.x, p1.y, b.x, b.y));
 	
-	const debugMode = (intersectionPoints % 2 === 1);
+	const debugMode = (intersectionPoints.length % 2 === 1);
 	if (debugMode) {
 		console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
 		console.log(boundaryPts);

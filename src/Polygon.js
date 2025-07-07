@@ -17,13 +17,13 @@ export default class Polygon {
       throw new Error('Polygon must have at least 3 edges.');
     }
     const angleStep = (Math.PI * 2) / nEdges;
-    for (let i = 0; i <= nEdges; i++) {
+    for (let i = 0; i < nEdges; i++) {
       const angle = i * angleStep + rotation;
       const x = center.x + radius * Math.cos(angle);
       const y = center.y + radius * Math.sin(angle);
       pts.push(new Point(x, y));
     }
-    return new Polygon(pts);
+    return new Polygon(pts, true);
   }
 
   addPoint(pt) {
