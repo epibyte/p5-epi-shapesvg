@@ -1,14 +1,24 @@
 import Point from './Point.js';
+import Line from './Line.js';
 
 // Class Line: uses Point objects, when CLOSEd, last point has to be same as first point
 export default class Polygon {
   constructor(ptArr = [], closePath = false) {
     // can be also multiple polygons
-    this.pts = [[...ptArr]];
-    if (closePath && ptArr.length) {
-      this.pts[0].push(this.pts[0][0]); // ensure first point is same as last point
+    this.pts = [];
+    if (ptArr && ptArr.length) {
+      this.pts.push([...ptArr]);
+      if (closePath) {
+        this.closeLastPath()
+      }
     }
+
     console.log(this.pts);
+  }
+  closeLastPath() {
+    if (this.pts.length) {
+      this.pts[this.pts.length-1].push(this.pts[this.pts.length-1][0]); // ensure first point is same as last point
+    }
   }
 
   static createFromNEdges(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
@@ -54,11 +64,14 @@ export default class Polygon {
     if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
     this.pts[this.pts.length-1].push(pt);
   }
-  addPtsArr(ptsArr) {
+  addPtsArr(ptsArr, closePath = false) {
     if (!Array.isArray(ptsArr) || !ptsArr.every(pt => pt instanceof Point)) {
       // throw new Error('addPtsArr expects an array of Point instances.');
     }
     this.pts.push([...ptsArr]);
+    if (closePath && ptsArr.length) {
+      this.closeLastPath();
+    }
   }
 
   length() {
@@ -224,14 +237,13 @@ export default class Polygon {
 
     // Check intersections with all polygon edges
     const boundaryPts = this.pts[0]; // Assuming the first ring is the boundary
+    const seg1 = new Line(p1, p2);
     for (let i = 0; i < boundaryPts.length - 1; i++) {
       let j = (i + 1) % boundaryPts.length;  // next vertex, wrapping around
       let edgeStart = boundaryPts[i];
       let edgeEnd = boundaryPts[j];
-
-      const l1 = new Line(p1, p2);
-      const l2 = new Line(edgeStart, edgeEnd);
-      let intersection = l1.segmentIntersection(l2);
+      const seg2 = new Line(edgeStart, edgeEnd);
+      let intersection = seg1.segmentIntersection(seg2);
       if (intersection) this.insertIntersectionPoint(intersectionPoints, intersection); // intersectionPoints.push(intersection);
     }
 
@@ -260,24 +272,28 @@ export default class Polygon {
     
     // Draw all valid line segments inside the polygon
     // svgStr += `<g>\n`
+    const segmentPoly = new Polygon();
     for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
       let start = intersectionPoints[i];
       let end = intersectionPoints[i + 1];
+      console.log(`Segment: ${i}, ${start} ${end}`);
+      segmentPoly.addPtsArr([start, end]);
       // const dst = dist(start.x, start.y, end.x, end.y);
       // if (debugMode) {stroke("red")} else {stroke("silver")}
-      line(start.x, start.y, end.x, end.y);
-      svgStr += `<line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`;
+      // line(start.x, start.y, end.x, end.y);
+      // svgStr += `<line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`;
       // if (debugMode) console.log(`.. ${nf(dst, 0, 3)}: <line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`);
     }
 
     // svgStr += `</g>\n`
-    return intersectionPoints;
+    return segmentPoly;
   }
   insertIntersectionPoint(arr, newPt) {
     const epsilon = 1e-6;
     
     for (const p of arr) {
-      if (dist(p.x, p.y, newPt.x, newPt.y) < epsilon) {
+      // if (dist(p.x, p.y, newPt.x, newPt.y) < epsilon) {
+      if (p.distanceToSq(newPt) < epsilon) {
         return false;
       }
     }
