@@ -50,7 +50,7 @@ export default class Point {
   }
 
   // Check if a point is (just) in area
-  isOnSegmentArea(seg) {
+  isInSegmentArea(seg) {
     const epsilon = 1e-6; // small tolerance for floating-point errors
     const p1 = seg.pt1;
     const p2 = seg.pt2;
