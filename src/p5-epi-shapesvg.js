@@ -270,7 +270,7 @@ function insertIntersectionPoint(arr, newPt) {
   
 // Check if a point is on a line segment
 function isPointOnSegment(x, y, p1, p2) {
-  const epsilon = 1e-6; // S mall tolerance for floating-point errors
+  const epsilon = 1e-6; // Small tolerance for floating-point errors
   return (
     x >= Math.min(p1.x, p2.x) - epsilon &&
     x <= Math.max(p1.x, p2.x) + epsilon &&

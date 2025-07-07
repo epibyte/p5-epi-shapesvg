@@ -57,8 +57,8 @@ export default class Line {
     );
 
     // Check if the intersection point is within both segments
-    if (intersectPt.isOnSegmentArea(this) &&
-        intersectPt.isOnSegmentArea(otherLine)) {
+    if (intersectPt.isInSegmentArea(this) &&
+        intersectPt.isInSegmentArea(otherLine)) {
       return intersectPt;
     }
 
