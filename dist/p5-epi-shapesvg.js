@@ -41,7 +41,7 @@ var EpiShapeSvg = (function (exports) {
     }
 
     scale(scl) {
-  	  return {x: this.x * scl, y: this.y * scl};
+  	  return new Point(this.x * scl, this.y * scl);
     }
 
     rotate(angle, origin = null) {
@@ -70,6 +70,16 @@ var EpiShapeSvg = (function (exports) {
 
     toString() {
       return `Point(${this.x}, ${this.y})`;
+    }
+
+    toSVG() {
+      const det = 3;
+      const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
+      return `<circle cx="${nf(this.x, 0, det)}" cy="${nf(this.y, 0, det)}" r="2" />`;
+    }
+
+    drawShape() {
+      ellipse(this.x, this.y, 5, 5);
     }
   }
 
@@ -140,6 +150,16 @@ var EpiShapeSvg = (function (exports) {
 
     toString() {
       return `Line(${this.pt1.toString()} -> ${this.pt2.toString()})`;
+    }
+
+    toSVG() {
+      const det = 3;
+      const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
+      return `<line x1="${nf(this.pt1.x, 0, det)}" y1="${nf(this.pt1.y, 0, det)}" x2="${nf(this.pt2.x, 0, det)}" y2="${nf(this.pt2.y, 0, det)}" />`;
+    }
+
+    drawShape() {
+      line(this.pt1.x, this.pt1.y, this.pt2.x, this.pt2.y);
     }
   }
 
@@ -367,7 +387,6 @@ var EpiShapeSvg = (function (exports) {
       return isInside;
     }
 
-
     clipLine(p1, p2, inside = true) {
       let intersectionPoints = [];
 
@@ -412,7 +431,7 @@ var EpiShapeSvg = (function (exports) {
       for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
         let start = intersectionPoints[i];
         let end = intersectionPoints[i + 1];
-        console.log(`Segment: ${i}, ${start} ${end}`);
+        // console.log(`Segment: ${i}, ${start} ${end}`);
         segmentPoly.addPtsArr([start, end]);
         // const dst = dist(start.x, start.y, end.x, end.y);
         // if (debugMode) {stroke("red")} else {stroke("silver")}
