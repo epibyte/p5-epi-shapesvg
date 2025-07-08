@@ -136,6 +136,7 @@ export default class Polygon {
   }
 
   // Clip points against the polygon boundary
+  // deprecated: use clipTo() instead
   clipPts(ptsArr, rotation = null) {
     const segmentPoly = new Polygon();
     let currentSegment = [];
