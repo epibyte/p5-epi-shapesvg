@@ -232,15 +232,19 @@ var EpiShapeSvg = (function (exports) {
     }
     
     static createArc(center, dim, startAngle, stopAngle, rotation = null) {
-      TAU*(w+h)/4;
-      const num = ~~((stop - start) / 0.01);
-      const dlt_angle = (stop - start) / num; // min(HALF_PI, TAU/(u/l)); //
+    	const len = 4;
+      const cir = 2 * Math.PI * (dim.x + dim.y) / 2; // approximation
+      const num = Math.max(3, ~~(cir / len * (stopAngle - startAngle) / (2 * Math.PI)));
+      const dlt_angle = (stopAngle - startAngle) / num; // min(HALF_PI, TAU/(u/l)); //
       const pts = [];
-      for (let i = 0, angle = start; i <= num; i++, angle += dlt_angle) {
-        if (i === num) angle = stop;
-        
+      for (let i = 0, angle = startAngle; i <= num; i++, angle += dlt_angle) {
+        if (i === num) angle = stopAngle;
+
         // Compute point on the unrotated ellipse
-        let pt = new Point(x + (w / 2) * cos(angle), y + (h / 2) * sin(angle));
+        let pt = new Point(
+          center.x + (dim.x / 2) * Math.cos(angle),
+          center.y + (dim.y / 2) * Math.sin(angle)
+        );
 
         // Apply manual rotation if required
         if (rotation) {
@@ -294,6 +298,7 @@ var EpiShapeSvg = (function (exports) {
     }
 
     // Clip points against the polygon boundary
+    // deprecated: use clipTo() instead
     clipPts(ptsArr, rotation = null) {
       const segmentPoly = new Polygon();
       let currentSegment = [];
