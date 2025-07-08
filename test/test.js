@@ -98,3 +98,7 @@ console.log('Multiple Lines Polygon:', multipleLinesPoly.toSVG());
 const hashedLines = multipleLinesPoly.clipTo(mergedShapes);
 console.log('Hashed Lines:', hashedLines.toSVG());
 console.log('Hashed Lines optimized:', hashedLines.optimize().toSVG());
+
+console.log('\nArc\n');
+const arc = Polygon.createArc(new Point(200, 200), new Point(150, 100), 0, Math.PI / 2);
+console.log('Arc:', arc.toSVG());
