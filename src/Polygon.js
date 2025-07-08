@@ -260,7 +260,8 @@ export default class Polygon {
     intersectionPoints.sort((a, b) => p1.distanceToSq(a) - p1.distanceToSq(b));
     
     const debugMode = (intersectionPoints.length % 2 === 1);
-    if (debugMode) {
+    if (false && debugMode) { // ToDo: check issue, but only in debug mode
+      console.log("Debug Mode: Odd number of intersection points detected."); 
       console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
       console.log(boundaryPts);
       console.log(intersectionPoints);
