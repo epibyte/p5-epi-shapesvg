@@ -38,7 +38,7 @@ export default class Point {
   }
 
   scale(scl) {
-	  return {x: this.x * scl, y: this.y * scl};
+	  return new Point(this.x * scl, this.y * scl);
   }
 
   rotate(angle, origin = null) {
@@ -67,5 +67,9 @@ export default class Point {
 
   toString() {
     return `Point(${this.x}, ${this.y})`;
+  }
+
+  drawShape() {
+    ellipse(this.x, this.y, 5, 5);
   }
 }

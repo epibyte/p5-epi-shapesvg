@@ -68,4 +68,8 @@ export default class Line {
   toString() {
     return `Line(${this.pt1.toString()} -> ${this.pt2.toString()})`;
   }
+
+  drawShape() {
+    line(this.pt1.x, this.pt1.y, this.pt2.x, this.pt2.y);
+  }
 }

@@ -228,7 +228,6 @@ export default class Polygon {
     return isInside;
   }
 
-
   clipLine(p1, p2, inside = true) {
     let intersectionPoints = [];
 
