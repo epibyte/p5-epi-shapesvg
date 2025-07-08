@@ -60,4 +60,5 @@ console.log('\nclipPoly\n');
 const clipLinePoly = new Polygon([new Point(0, 50), new Point(50, 40), new Point(100, 50 )]);
 const clipBoundary2 = new Polygon([new Point(0, 90), new Point(25, 10), new Point(50, 0), new Point(75, 10), new Point(100, 90)], true);
 const clippedLinePoly = clipBoundary2.clipPoly(clipLinePoly);
-console.log('Clipped Poly:', clippedLinePoly);
+console.log('Clipped clippedLinePoly:', clippedLinePoly);
+console.log('clippedLinePoly.toSVG():', clippedLinePoly.toSVG());

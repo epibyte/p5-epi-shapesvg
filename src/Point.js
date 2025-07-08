@@ -17,13 +17,13 @@ export default class Point {
     return Math.abs(this.x - otherPoint.x) < epsilon && Math.abs(this.y - otherPoint.y) < epsilon;
   }
 
-  distanceToSq(otherPoint) {
+  distanceSqTo(otherPoint) {
     const dx = this.x - otherPoint.x;
     const dy = this.y - otherPoint.y;
     return dx * dx + dy * dy;
   }
   distanceTo(otherPoint) {
-    return Math.sqrt(this.distanceToSq(otherPoint));
+    return Math.sqrt(this.distanceSqTo(otherPoint));
   }
 
   lerp(otherPoint, f) {

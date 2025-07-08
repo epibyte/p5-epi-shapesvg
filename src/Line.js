@@ -17,9 +17,11 @@ export default class Line {
   midPt() {
     return this.lerpPt(0.5);
   }
+
   lerpPt(f) {
     return this.pt1.lerp(this.pt2, f);
   }
+  
   lerpLine(otherLine, f) {
     return new Line(
       this.pt1.lerp(otherLine.pt1, f),

@@ -13,15 +13,18 @@ export default class Polygon {
       }
     }
   }
+
   closeLastPath() {
     if (this.pts.length) {
       this.pts[this.pts.length-1].push(this.pts[this.pts.length-1][0]); // ensure first point is same as last point
     }
   }
+
   addPoint(pt) {
     if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
     this.pts[this.pts.length-1].push(pt);
   }
+
   addPtsArr(ptsArr, closePath = false) {
     if (!Array.isArray(ptsArr) || !ptsArr.every(pt => pt instanceof Point)) {
       // throw new Error('addPtsArr expects an array of Point instances.');
@@ -70,7 +73,6 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
 
-
   length() {
     let totalLength = 0;
     for (let i = 0; i < this.pts.length; i++) {
@@ -90,7 +92,7 @@ export default class Polygon {
     // return `Polygon(${this.pts.map(pt => pt.toString()).join(", ")})`;
   }
 
-  toSVG(stroke = "black", fill = "none", strokeWidth = 1) {
+  toSVG() { // stroke = "black", fill = "none", strokeWidth = 1
     const det = 3;
     const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
     let svgStr = "";
@@ -99,7 +101,7 @@ export default class Polygon {
       if (ring.length === 0) continue;
 
       const pointsStr = ring.map(pt => `${nf(pt.x, 0, det)},${nf(pt.y, 0, det)}`).join(" ");
-      svgStr += `<polyline points="${pointsStr}" stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" />\n`;
+      svgStr += `<polyline points="${pointsStr}" />\n`; // stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}"
     }
 
     return svgStr;
@@ -240,49 +242,41 @@ export default class Polygon {
       let edgeEnd = boundaryPts[j];
       const seg2 = new Line(edgeStart, edgeEnd);
       let intersection = seg1.segmentIntersection(seg2);
-      if (intersection) this.insertIntersectionPoint(intersectionPoints, intersection); // intersectionPoints.push(intersection);
+      if (intersection) this.insertIntersectionPoint(intersectionPoints, intersection);
     }
 
     // Check if endpoints are inside the polygon
-    let p1Inside = this.isPointInPtsArr(p1, boundaryPts); // isPointInPolygon(p1.x, p1.y, boundaryPts);
-    let p2Inside = this.isPointInPtsArr(p2, boundaryPts); // isPointInPolygon(p2.x, p2.y, boundaryPts);
+    let p1Inside = this.isPointInPtsArr(p1, boundaryPts);
+    let p2Inside = this.isPointInPtsArr(p2, boundaryPts);
 
     // Add the endpoints if they are inside/outside the polygon
     if (inside) {	
-      if (p1Inside) this.insertIntersectionPoint(intersectionPoints, p1); // intersectionPoints.push(p1);
-      if (p2Inside) this.insertIntersectionPoint(intersectionPoints, p2); // intersectionPoints.push(p2);
+      if (p1Inside) this.insertIntersectionPoint(intersectionPoints, p1);
+      if (p2Inside) this.insertIntersectionPoint(intersectionPoints, p2);
     } else {
-      if (!p1Inside) this.insertIntersectionPoint(intersectionPoints, p1); // intersectionPoints.push(p1);
-      if (!p2Inside) this.insertIntersectionPoint(intersectionPoints, p2); // intersectionPoints.push(p2);
+      if (!p1Inside) this.insertIntersectionPoint(intersectionPoints, p1);
+      if (!p2Inside) this.insertIntersectionPoint(intersectionPoints, p2);
     }
     // Sort intersection points by distance from p1
-    // intersectionPoints.sort((a, b) => dist(p1.x, p1.y, a.x, a.y) - dist(p1.x, p1.y, b.x, b.y));
-    intersectionPoints.sort((a, b) => p1.distanceToSq(a) - p1.distanceToSq(b));
-    
-    const debugMode = (intersectionPoints.length % 2 === 1);
-    if (false && debugMode) { // ToDo: check issue, but only in debug mode
+    intersectionPoints.sort((a, b) => p1.distanceSqTo(a) - p1.distanceSqTo(b));
+
+    // ToDo: check issue, but only in debug mode
+    const debugMode = (intersectionPoints.length % 2 === 1) && false;
+    if (debugMode) { 
       console.log("Debug Mode: Odd number of intersection points detected."); 
       console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
       console.log(boundaryPts);
       console.log(intersectionPoints);
     }
     
-    // Draw all valid line segments inside the polygon
-    // svgStr += `<g>\n`
+    // Collect segments from intersection points
     const segmentPoly = new Polygon();
     for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
       let start = intersectionPoints[i];
       let end = intersectionPoints[i + 1];
-      // console.log(`Segment: ${i}, ${start} ${end}`);
       segmentPoly.addPtsArr([start, end]);
-      // const dst = dist(start.x, start.y, end.x, end.y);
-      // if (debugMode) {stroke("red")} else {stroke("silver")}
-      // line(start.x, start.y, end.x, end.y);
-      // svgStr += `<line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`;
-      // if (debugMode) console.log(`.. ${nf(dst, 0, 3)}: <line x1="${nf(start.x,0,3)}" y1="${nf(start.y,0,3)}" x2="${nf(end.x,0,3)}" y2="${nf(end.y,0,3)}" />\n`);
     }
 
-    // svgStr += `</g>\n`
     return segmentPoly;
   }
   insertIntersectionPoint(arr, newPt) {
@@ -290,7 +284,7 @@ export default class Polygon {
     
     for (const p of arr) {
       // if (dist(p.x, p.y, newPt.x, newPt.y) < epsilon) {
-      if (p.distanceToSq(newPt) < epsilon) {
+      if (p.distanceSqTo(newPt) < epsilon) {
         return false;
       }
     }
