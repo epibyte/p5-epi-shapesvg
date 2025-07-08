@@ -212,6 +212,24 @@ var EpiShapeSvg = (function (exports) {
 
       return new Polygon(pts, true);
     }
+
+    static createFromStar(nEdges, radiusOuter = 100, radiusInner = 50, center = new Point(0, 0), rotation = 0) {
+      const pts = [];
+      if (nEdges < 3) {
+        throw new Error('Polygon must have at least 3 edges.');
+      }
+      const angleStep = (Math.PI * 2) / nEdges / 2;
+      const radii = [radiusOuter, radiusInner];
+      for (let i = 0; i < nEdges * 2; i++) {
+        const angle = i * angleStep + rotation;
+        const radius = radii[i % 2];
+        const x = center.x + radius * Math.cos(angle);
+        const y = center.y + radius * Math.sin(angle);
+        pts.push(new Point(x, y));
+      }
+
+      return new Polygon(pts, true);
+    }
     
     static createFromArc(center, dim, startAngle, stopAngle, rotation = null) {
       TAU*(w+h)/4;

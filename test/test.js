@@ -62,3 +62,7 @@ const clipBoundary2 = new Polygon([new Point(0, 90), new Point(25, 10), new Poin
 const clippedLinePoly = clipBoundary2.clipPoly(clipLinePoly);
 console.log('Clipped clippedLinePoly:', clippedLinePoly);
 console.log('clippedLinePoly.toSVG():', clippedLinePoly.toSVG());
+
+console.log('\nStar\n');
+const star = Polygon.createFromStar(4, 100, 50, new Point(100, 100));
+console.log('Star Polygon:', star.toString());
