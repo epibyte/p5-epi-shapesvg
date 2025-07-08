@@ -418,12 +418,7 @@ var EpiShapeSvg = (function (exports) {
       // intersectionPoints.sort((a, b) => dist(p1.x, p1.y, a.x, a.y) - dist(p1.x, p1.y, b.x, b.y));
       intersectionPoints.sort((a, b) => p1.distanceToSq(a) - p1.distanceToSq(b));
       
-      const debugMode = (intersectionPoints.length % 2 === 1);
-      if (debugMode) {
-        console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
-        console.log(boundaryPts);
-        console.log(intersectionPoints);
-      }
+      (intersectionPoints.length % 2 === 1);
       
       // Draw all valid line segments inside the polygon
       // svgStr += `<g>\n`
