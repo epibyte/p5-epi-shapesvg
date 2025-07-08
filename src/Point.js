@@ -11,6 +11,7 @@ export default class Point {
   set(x, y) {
     this.x = x;
     this.y = y;
+    return this;
   }
   
   equals(otherPoint, epsilon = 1e-6) {
@@ -65,14 +66,12 @@ export default class Point {
     );
   }
 
-  toString() {
-    return `Point(${this.x}, ${this.y})`;
+  toString(prec = 1) {
+    return `Point(${this.x.toFixed(prec)}, ${this.y.toFixed(prec)})`;
   }
 
-  toSVG() {
-    const det = 3;
-    const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
-    return `<circle cx="${nf(this.x, 0, det)}" cy="${nf(this.y, 0, det)}" r="2" />`;
+  toSVG(prec = 1) {
+    return `<circle cx="${this.x.toFixed(prec)}" cy="${this.y.toFixed(prec)}" r="2" />`;
   }
 
   drawShape() {

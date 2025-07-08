@@ -9,7 +9,7 @@ export default class Polygon {
     if (ptArr && ptArr.length) {
       this.pts.push([...ptArr]);
       if (closePath) {
-        this.closeLastPath()
+        this.closeLastPath();
       }
     }
   }
@@ -18,11 +18,13 @@ export default class Polygon {
     if (this.pts.length) {
       this.pts[this.pts.length-1].push(this.pts[this.pts.length-1][0]); // ensure first point is same as last point
     }
+    return this;
   }
 
   addPoint(pt) {
     if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
     this.pts[this.pts.length-1].push(pt);
+    return this;
   }
 
   addPtsArr(ptsArr, closePath = false) {
@@ -33,9 +35,10 @@ export default class Polygon {
     if (closePath && ptsArr.length) {
       this.closeLastPath();
     }
+    return this;
   }
 
-  static createFromNEdges(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
+  static createNEdges(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
     const pts = [];
     if (nEdges < 3) {
       throw new Error('Polygon must have at least 3 edges.');
@@ -51,7 +54,7 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
 
-  static createFromStar(nEdges, radiusOuter = 100, radiusInner = 50, center = new Point(0, 0), rotation = 0) {
+  static createStar(nEdges, radiusOuter = 100, radiusInner = 50, center = new Point(0, 0), rotation = 0) {
     const pts = [];
     if (nEdges < 3) {
       throw new Error('Polygon must have at least 3 edges.');
@@ -69,7 +72,7 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
   
-  static createFromArc(center, dim, startAngle, stopAngle, rotation = null) {
+  static createArc(center, dim, startAngle, stopAngle, rotation = null) {
   	const l = 5;
     const u = TAU*(w+h)/4;
     const num = ~~((stop - start) / 0.01);
@@ -105,20 +108,15 @@ export default class Polygon {
     return totalLength;
   }   
 
-  toString() {
-    return `Polygon(${this.pts.map(ptArr => ptArr.map(pt => pt.toString()).join(", ")).join(" | ")})`;
-    // return `Polygon(${this.pts.map(pt => pt.toString()).join(", ")})`;
+  toString(prec = 1) {
+    return `Polygon(${this.pts.map(ptArr => ptArr.map(pt => pt.toString(prec)).join(", ")).join(" | ")})`;
   }
 
-  toSVG() { // stroke = "black", fill = "none", strokeWidth = 1
-    const det = 3;
-    const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
+  toSVG(prec = 1) { // stroke = "black", fill = "none", strokeWidth = 1
     let svgStr = "";
-
     for (const ring of this.pts) {
       if (ring.length === 0) continue;
-
-      const pointsStr = ring.map(pt => `${nf(pt.x, 0, det)},${nf(pt.y, 0, det)}`).join(" ");
+      const pointsStr = ring.map(pt => `${pt.x.toFixed(prec)},${pt.y.toFixed(prec)}`).join(" ");
       svgStr += `<polyline points="${pointsStr}" />\n`; // stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}"
     }
 
@@ -311,16 +309,56 @@ export default class Polygon {
     return true;
   }
 
-  // Clip another polygon against this polygon, returning the merged result
-  clipPoly(otherPoly, inside = true) {
+  // Merge rings if last point of one equals first point of next
+  optimize(epsilon = 1e-6) {
+    let rings = this.pts.map(r => [...r]);
+    let merged = [];
+    let used = new Array(rings.length).fill(false);
+  
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = 0; i < rings.length; i++) {
+        if (used[i] || rings[i].length === 0) continue;
+        for (let j = 0; j < rings.length; j++) {
+          if (i === j || used[j] || rings[j].length === 0) continue;
+  
+          if (rings[i][rings[i].length - 1].equals(rings[j][0], epsilon)) {
+            rings[i] = rings[i].concat(rings[j].slice(1));
+            used[j] = true;
+            changed = true;
+            break;
+          }
+          if (rings[j][rings[j].length - 1].equals(rings[i][0], epsilon)) {
+            rings[j] = rings[j].concat(rings[i].slice(1));
+            used[i] = true;
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+  
+    for (let i = 0; i < rings.length; i++) {
+      if (!used[i] && rings[i].length > 0) {
+        merged.push(rings[i]);
+      }
+    }
+  
+    this.pts = merged;
+    return this;
+  }
+  
+  // Clip this polygon against another polygon, returning the merged result
+  clipTo(otherPoly, inside = true) {
     const mergedPoly = new Polygon();
 
-    for (const ring of otherPoly.pts) {
+    for (const ring of this.pts) {
       if (ring.length < 2) continue;
       for (let i = 0; i < ring.length - 1; i++) {
         const p1 = ring[i];
         const p2 = ring[i + 1];
-        const segmentPoly = this.clipLine(p1, p2, inside);
+        const segmentPoly = otherPoly.clipLine(p1, p2, inside);
         for (const segRing of segmentPoly.pts) {
           if (segRing.length > 0) {
             mergedPoly.addPtsArr(segRing);
@@ -328,35 +366,39 @@ export default class Polygon {
         }
       }
     }
-    mergedPoly.optimizePoly(); // Merge rings if last point of one equals first point of next  
+    mergedPoly.optimize(); // Merge rings if last point of one equals first point of next  
     return mergedPoly;
   }
-  
-  // Merge rings if last point of one equals first point of next
-  optimizePoly() {
-    if (this.pts.length < 2) return;
 
-    let optimized = [];
-    let current = [...this.pts[0]];
-
-    for (let i = 1; i < this.pts.length; i++) {
-      const prevRing = current;
-      const nextRing = this.pts[i];
-      if (
-        prevRing.length > 0 &&
-        nextRing.length > 0 &&
-        prevRing[prevRing.length - 1].equals(nextRing[0])
-      ) {
-        // Merge: skip duplicate point
-        current = current.concat(nextRing.slice(1));
-      } else {
-        optimized.push(current);
-        current = [...nextRing];
-      }
-    }
-    optimized.push(current);
-
-    this.pts = optimized;
+  // Merge this polygon with another, 
+  merge(other) {
+    this.pts = [...this.pts, ...other.pts];
+    return this;
   }
-
+  
+  /**
+   * Returns the outer hull (union) of multiple polygons using repeated clipTo(..., false).
+   * @param {...Polygon} polys - Any number of Polygon instances.
+   * @returns {Polygon} - The union polygon.
+   */
+  static outerHull(...polys) {
+    if (polys.length === 0) return new Polygon();
+  
+    const outers = polys.map((poly, i) => {
+      let result = poly;
+      for (let j = 0; j < polys.length; j++) {
+        if (i !== j) {
+          result = result.clipTo(polys[j], false);
+        }
+      }
+      return result;
+    });
+  
+    // Merge all outer segments and optimize
+    let union = new Polygon();
+    for (const outer of outers) {
+      union.merge(outer);
+    }
+    return union.optimize();
+  }
 }

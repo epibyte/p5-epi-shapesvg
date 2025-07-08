@@ -21,7 +21,7 @@ export default class Line {
   lerpPt(f) {
     return this.pt1.lerp(this.pt2, f);
   }
-  
+
   lerpLine(otherLine, f) {
     return new Line(
       this.pt1.lerp(otherLine.pt1, f),
@@ -67,14 +67,12 @@ export default class Line {
     return null;
   }
 
-  toString() {
-    return `Line(${this.pt1.toString()} -> ${this.pt2.toString()})`;
+  toString(prec = 1) {
+    return `Line(${this.pt1.toString(prec)} -> ${this.pt2.toString(prec)})`;
   }
 
-  toSVG() {
-    const det = 3;
-    const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
-    return `<line x1="${nf(this.pt1.x, 0, det)}" y1="${nf(this.pt1.y, 0, det)}" x2="${nf(this.pt2.x, 0, det)}" y2="${nf(this.pt2.y, 0, det)}" />`;
+  toSVG(prec = 1) {
+    return `<line x1="${this.pt1.x.toFixed(prec)}" y1="${this.pt1.y.toFixed(prec)}" x2="${this.pt2.x.toFixed(prec)}" y2="${this.pt2.y.toFixed(prec)}" />`;
   }
 
   drawShape() {

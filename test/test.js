@@ -25,7 +25,7 @@ console.log('translate():', l1tp.toString());
 console.log('isInSegmentArea():', l1tp.isInSegmentArea(l1));
 console.log('Segment Intersection:', intersection); 
 
-const poly5edge = Polygon.createFromNEdges(5, 100, new Point(40, 60), Math.PI / 4);
+const poly5edge = Polygon.createNEdges(5, 100, new Point(40, 60), Math.PI / 4);
 console.log(poly5edge.toString());
 
 const polyEmpty = new Polygon();
@@ -35,7 +35,9 @@ const tria1 = new Polygon([new Point(10, 50), new Point(50, 10), new Point(90, 5
 const tria2 = new Polygon([new Point(10, 70), new Point(50, 30), new Point(90, 70)], true);
 const tria3 = new Polygon([new Point(10, 20), new Point(90, 20), new Point(50, 60)], true);
 tria3.addPtsArr(tria1.pts[0]); // add tria1 points to tria3
-console.log(tria1.toString());
+console.log("tria1", tria1.toString());
+const unionTriangles = Polygon.outerHull(tria1, tria2, tria3);
+console.log("unionTriangles", unionTriangles.toSVG());
 
 for (let x = 0; x<= 90; x+=10) {
   const pt = new Point(x, 40);
@@ -59,10 +61,40 @@ console.log('pt2.toSVG():', clipLine.pt2.toSVG());
 console.log('\nclipPoly\n');
 const clipLinePoly = new Polygon([new Point(0, 50), new Point(50, 40), new Point(100, 50 )]);
 const clipBoundary2 = new Polygon([new Point(0, 90), new Point(25, 10), new Point(50, 0), new Point(75, 10), new Point(100, 90)], true);
-const clippedLinePoly = clipBoundary2.clipPoly(clipLinePoly);
+const clippedLinePoly = clipLinePoly.clipTo(clipBoundary2);
 console.log('Clipped clippedLinePoly:', clippedLinePoly);
 console.log('clippedLinePoly.toSVG():', clippedLinePoly.toSVG());
 
+// Star, Box, merging
 console.log('\nStar\n');
-const star = Polygon.createFromStar(4, 100, 50, new Point(100, 100));
-console.log('Star Polygon:', star.toString());
+
+const starRad = 200;
+const mbox = Polygon.createNEdges(4, starRad/2, new Point(starRad+100, starRad+100), Math.PI/4);
+// mbox.drawShape();
+const star = Polygon.createStar(5, starRad, starRad/4, new Point(starRad+100, starRad+100), 0.4);
+// star.drawShape();
+
+const outerStar = star.clipTo(mbox, false);
+// outerStar.drawShape();
+console.log("outerStar", outerStar.toSVG());
+
+const outerBox = mbox.clipTo(star, false);
+// outerBox.drawShape();
+console.log("outerBox", outerBox.toSVG());
+
+const mergedShapes = outerStar.merge(outerBox);
+console.log("mergedShapes", mergedShapes.toSVG());
+console.log("mergedShapes.optimize()", mergedShapes.optimize().toSVG());/*
+mergedShapes
+<polyline points="370.7,352.8 370.7,370.7 318.2,370.7 282.9,499.3 270.4,370.7 229.3,370.7 229.3,339.5 105.2,345.3 229.3,291.3 229.3,229.3 234.6,229.3 196.7,128.7 285.8,229.3 330.4,229.3 431.0,148.9 370.7,251.3 370.7,303.2 484.2,377.9 370.7,352.8" />
+*/
+
+const multipleLinesPoly = new Polygon();
+for (let y = 100; y <= 500; y += 10) {
+  multipleLinesPoly.addPtsArr([new Point(100, y), new Point(500, y)]);
+}
+console.log('Multiple Lines Polygon:', multipleLinesPoly.toSVG());
+
+const hashedLines = multipleLinesPoly.clipTo(mergedShapes);
+console.log('Hashed Lines:', hashedLines.toSVG());
+console.log('Hashed Lines optimized:', hashedLines.optimize().toSVG());
