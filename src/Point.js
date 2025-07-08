@@ -69,6 +69,12 @@ export default class Point {
     return `Point(${this.x}, ${this.y})`;
   }
 
+  toSVG() {
+    const det = 3;
+    const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
+    return `<circle cx="${nf(this.x, 0, det)}" cy="${nf(this.y, 0, det)}" r="2" />`;
+  }
+
   drawShape() {
     ellipse(this.x, this.y, 5, 5);
   }

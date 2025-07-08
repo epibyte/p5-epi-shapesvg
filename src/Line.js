@@ -69,6 +69,12 @@ export default class Line {
     return `Line(${this.pt1.toString()} -> ${this.pt2.toString()})`;
   }
 
+  toSVG() {
+    const det = 3;
+    const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
+    return `<line x1="${nf(this.pt1.x, 0, det)}" y1="${nf(this.pt1.y, 0, det)}" x2="${nf(this.pt2.x, 0, det)}" y2="${nf(this.pt2.y, 0, det)}" />`;
+  }
+
   drawShape() {
     line(this.pt1.x, this.pt1.y, this.pt2.x, this.pt2.y);
   }

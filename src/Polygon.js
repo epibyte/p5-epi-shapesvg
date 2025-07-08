@@ -91,7 +91,7 @@ export default class Polygon {
   }
 
   toSVG(stroke = "black", fill = "none", strokeWidth = 1) {
-    const det = 3
+    const det = 3;
     const nf = (value, leading, digits = 0) => Number(value).toFixed(digits);
     let svgStr = "";
 
@@ -272,7 +272,7 @@ export default class Polygon {
     for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
       let start = intersectionPoints[i];
       let end = intersectionPoints[i + 1];
-      console.log(`Segment: ${i}, ${start} ${end}`);
+      // console.log(`Segment: ${i}, ${start} ${end}`);
       segmentPoly.addPtsArr([start, end]);
       // const dst = dist(start.x, start.y, end.x, end.y);
       // if (debugMode) {stroke("red")} else {stroke("silver")}
