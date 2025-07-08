@@ -51,7 +51,7 @@ console.log('Clipped lines as SVG:', hashedLines.toSVG());
 
 ## Usage Example (OpenProcessing / CDN)
 
-1. In OpenProcessing, go to **Sketch > Libraries > Add External Script** and add:
+1. In OpenProcessing, go to **Sketch > Libraries > Add .js File** and paste URL:
    
    `https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js`
 
