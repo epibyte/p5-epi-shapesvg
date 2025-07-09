@@ -2,7 +2,15 @@ import Point from './Point.js';
 import Line from './Line.js';
 
 // Class Line: uses Point objects, when CLOSEd, last point has to be same as first point
+/**
+ * Polygon: Represents one or more polylines (rings), which can be open or closed.
+ * Used for polygons, polylines, and collections of lines.
+ */
 export default class Polygon {
+  /**
+   * @param {Point[]} [ptArr=[]] - Array of Point objects for the first ring
+   * @param {boolean} [closePath=false] - Whether to close the first ring
+   */
   constructor(ptArr = [], closePath = false) {
     // can be also multiple polygons
     this.pts = [];
@@ -14,30 +22,72 @@ export default class Polygon {
     }
   }
 
+  /**
+   * Returns a deep copy of this Polygon (all rings and Points are cloned).
+   * @returns {Polygon}
+   */
+  copy() {
+    const newPoly = new Polygon();
+    for (const ring of this.pts) {
+      // Deep copy each Point in the ring
+      newPoly.pts.push(ring.map(pt => pt.copy()));
+    }
+    return newPoly;
+  }
+
+  /**
+   * Closes the last ring if not already closed (last point equals first point).
+   * @returns {Polygon}
+   */
   closeLastPath() {
     if (this.pts.length) {
-      this.pts[this.pts.length-1].push(this.pts[this.pts.length-1][0]); // ensure first point is same as last point
+      const ring = this.pts[this.pts.length - 1];
+      if (ring.length > 1 && !ring[ring.length - 1].equals(ring[0])) {
+        ring.push(ring[0]);
+      }
     }
     return this;
   }
 
+  /**
+   * Adds a Point to the last ring.
+   * @param {Point} pt
+   * @returns {Polygon}
+   */
   addPoint(pt) {
     if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
     this.pts[this.pts.length-1].push(pt);
     return this;
   }
 
+  /**
+   * Adds an array of Points (or {x, y} objects) as a new ring.
+   * Converts {x, y} objects to Point if needed.
+   * @param {Array<Point|{x:number,y:number}>} ptsArr
+   * @param {boolean} [closePath=false]
+   * @returns {Polygon}
+   */
   addPtsArr(ptsArr, closePath = false) {
-    if (!Array.isArray(ptsArr) || !ptsArr.every(pt => pt instanceof Point)) {
-      // throw new Error('addPtsArr expects an array of Point instances.');
+    if (!Array.isArray(ptsArr)) {
+      throw new Error('addPtsArr expects an array.');
     }
-    this.pts.push([...ptsArr]);
-    if (closePath && ptsArr.length) {
+    // Convert {x, y} objects to Point if needed
+    const pts = ptsArr.map(pt => (pt instanceof Point ? pt : new Point(pt.x, pt.y)));
+    this.pts.push(pts);
+    if (closePath && pts.length) {
       this.closeLastPath();
     }
     return this;
   }
 
+  /**
+   * Creates a regular polygon with n edges.
+   * @param {number} nEdges
+   * @param {number} [radius=100]
+   * @param {Point} [center=new Point(0,0)]
+   * @param {number} [rotation=0]
+   * @returns {Polygon}
+   */
   static createNEdges(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
     const pts = [];
     if (nEdges < 3) {
@@ -54,6 +104,15 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
 
+  /**
+   * Creates a star-shaped polygon.
+   * @param {number} nEdges
+   * @param {number} [radiusOuter=100]
+   * @param {number} [radiusInner=50]
+   * @param {Point} [center=new Point(0,0)]
+   * @param {number} [rotation=0]
+   * @returns {Polygon}
+   */
   static createStar(nEdges, radiusOuter = 100, radiusInner = 50, center = new Point(0, 0), rotation = 0) {
     const pts = [];
     if (nEdges < 3) {
@@ -72,8 +131,17 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
   
+  /**
+   * Creates an arc or ellipse segment as a polygon.
+   * @param {Point} center - Center of the arc
+   * @param {{x:number, y:number}} dim - Width (x) and height (y) of the ellipse
+   * @param {number} startAngle - Start angle (radians)
+   * @param {number} stopAngle - Stop angle (radians)
+   * @param {number|null} [rotation=null] - Optional rotation (radians)
+   * @returns {Polygon}
+   */
   static createArc(center, dim, startAngle, stopAngle, rotation = null) {
-  	const len = 4;
+    const len = 4;
     const cir = 2 * Math.PI * (dim.x + dim.y) / 2; // approximation
     const num = Math.max(3, ~~(cir / len * (stopAngle - startAngle) / (2 * Math.PI)));
     const dlt_angle = (stopAngle - startAngle) / num; // min(HALF_PI, TAU/(u/l)); //
@@ -97,6 +165,10 @@ export default class Polygon {
     return new Polygon(pts, true);
   }
 
+  /**
+   * Returns the total length of all rings in the polygon.
+   * @returns {number}
+   */
   length() {
     let totalLength = 0;
     for (let i = 0; i < this.pts.length; i++) {
@@ -111,10 +183,20 @@ export default class Polygon {
     return totalLength;
   }   
 
+  /**
+   * Returns a string representation of the polygon.
+   * @param {number} [prec=1] - Decimal precision
+   * @returns {string}
+   */
   toString(prec = 1) {
     return `Polygon(${this.pts.map(ptArr => ptArr.map(pt => pt.toString(prec)).join(", ")).join(" | ")})`;
   }
 
+  /**
+   * Returns an SVG polyline string for all rings.
+   * @param {number} [prec=1] - Decimal precision
+   * @returns {string}
+   */
   toSVG(prec = 1) { // stroke = "black", fill = "none", strokeWidth = 1
     let svgStr = "";
     for (const ring of this.pts) {
@@ -126,6 +208,9 @@ export default class Polygon {
     return svgStr;
   }
 
+  /**
+   * Draws the polygon using p5.js beginShape()/vertex()/endShape().
+   */
   drawShape() {
     for (const ring of this.pts) {
       if (ring.length === 0) continue;
@@ -140,6 +225,12 @@ export default class Polygon {
 
   // Clip points against the polygon boundary
   // deprecated: use clipTo() instead
+  /**
+   * (Deprecated) Clips a polyline (array of Points) against the polygon boundary.
+   * @param {Point[]} ptsArr
+   * @param {number|null} [rotation=null]
+   * @returns {Polygon}
+   */
   clipPts(ptsArr, rotation = null) {
     const segmentPoly = new Polygon();
     let currentSegment = [];
@@ -200,6 +291,14 @@ export default class Polygon {
 
 
   // Check if point is on segment (line) between two points
+  /**
+   * Checks if a point is on the segment between two points.
+   * @param {Point} pt
+   * @param {Point} pa
+   * @param {Point} pb
+   * @param {number} [epsilon=1e-9]
+   * @returns {boolean}
+   */
   isPointOnSegment(pt, pa, pb, epsilon = 1e-9) {
     // Check if point pt is on segment pa-pb
     const cross = (pt.x - pa.x) * (pb.y - pa.y) - (pt.y - pa.y) * (pb.x - pa.x);
@@ -212,6 +311,12 @@ export default class Polygon {
             pt.y >= minY - epsilon && pt.y <= maxY + epsilon);
   }
 
+  /**
+   * Checks if a point is inside a ring (array of Points) using ray casting.
+   * @param {Point} pt
+   * @param {Point[]} ptsArr
+   * @returns {boolean}
+   */
   isPointInPtsArr(pt, ptsArr) {
     let isInside = false;
 
@@ -235,6 +340,11 @@ export default class Polygon {
 
 
   // calls isPointInPolygon() for each polygon and inverts result (XOR/DIFFERENCE)
+  /**
+   * Checks if a point is inside the polygon (handles multiple rings, XOR logic).
+   * @param {Point} pt
+   * @returns {boolean}
+   */
   isPointIn(pt) {
     let isInside = false;
 
@@ -250,6 +360,13 @@ export default class Polygon {
     return isInside;
   }
 
+  /**
+   * Clips a line segment against the polygon boundary (first ring).
+   * @param {Point} p1
+   * @param {Point} p2
+   * @param {boolean} [inside=true] - If true, keep inside segments; else, outside
+   * @returns {Polygon}
+   */
   clipLine(p1, p2, inside = true) {
     let intersectionPoints = [];
 
@@ -299,6 +416,12 @@ export default class Polygon {
 
     return segmentPoly;
   }
+  /**
+   * Inserts a point into an array if not already present (within epsilon).
+   * @param {Point[]} arr
+   * @param {Point} newPt
+   * @returns {boolean}
+   */
   insertIntersectionPoint(arr, newPt) {
     const epsilon = 1e-6;
     
@@ -314,6 +437,11 @@ export default class Polygon {
   }
 
   // Merge rings if last point of one equals first point of next
+  /**
+   * Merges rings if last point of one equals first point of next (within epsilon).
+   * @param {number} [epsilon=1e-6]
+   * @returns {Polygon}
+   */
   optimize(epsilon = 1e-6) {
     let rings = this.pts.map(r => [...r]);
     let merged = [];
@@ -354,9 +482,20 @@ export default class Polygon {
   }
   
   // Clip this polygon against another polygon, returning the merged result
+  /**
+   * Clips this polygon against another polygon, returning the merged result.
+   * If otherPoly is null/empty, returns a copy of this polygon.
+   * @param {Polygon} otherPoly
+   * @param {boolean} [inside=true] - If true, keep inside segments; else, outside
+   * @returns {Polygon}
+   */
   clipTo(otherPoly, inside = true) {
-    const mergedPoly = new Polygon();
+    // If otherPoly is null/undefined or has no rings, return a copy of this polygon
+    if (!otherPoly || !Array.isArray(otherPoly.pts) || otherPoly.pts.length === 0) {
+      return this.copy();
+    }
 
+    const mergedPoly = new Polygon();
     for (const ring of this.pts) {
       if (ring.length < 2) continue;
       for (let i = 0; i < ring.length - 1; i++) {
@@ -375,6 +514,11 @@ export default class Polygon {
   }
 
   // Merge this polygon with another, 
+  /**
+   * Merges this polygon with another (concatenates rings).
+   * @param {Polygon} other
+   * @returns {Polygon}
+   */
   merge(other) {
     this.pts = [...this.pts, ...other.pts];
     return this;
@@ -382,22 +526,27 @@ export default class Polygon {
   
   /**
    * Returns the outer hull (union) of multiple polygons using repeated clipTo(..., false).
+   * Skips arguments that are not Polygon instances or have no rings/points.
    * @param {...Polygon} polys - Any number of Polygon instances.
    * @returns {Polygon} - The union polygon.
    */
   static outerHull(...polys) {
-    if (polys.length === 0) return new Polygon();
-  
-    const outers = polys.map((poly, i) => {
+    // Filter out invalid arguments
+    const validPolys = polys.filter(
+      poly => poly instanceof Polygon && Array.isArray(poly.pts) && poly.pts.length > 0 && poly.pts.some(ring => Array.isArray(ring) && ring.length > 0)
+    );
+    if (validPolys.length === 0) return new Polygon();
+
+    const outers = validPolys.map((poly, i) => {
       let result = poly;
-      for (let j = 0; j < polys.length; j++) {
+      for (let j = 0; j < validPolys.length; j++) {
         if (i !== j) {
-          result = result.clipTo(polys[j], false);
+          result = result.clipTo(validPolys[j], false);
         }
       }
       return result;
     });
-  
+
     // Merge all outer segments and optimize
     let union = new Polygon();
     for (const outer of outers) {

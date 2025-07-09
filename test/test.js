@@ -34,9 +34,10 @@ console.log(polyEmpty.toString());
 const tria1 = new Polygon([new Point(10, 50), new Point(50, 10), new Point(90, 50)], true);
 const tria2 = new Polygon([new Point(10, 70), new Point(50, 30), new Point(90, 70)], true);
 const tria3 = new Polygon([new Point(10, 20), new Point(90, 20), new Point(50, 60)], true);
+const tria0 = null; // new Polygon(); // empty polygon
 tria3.addPtsArr(tria1.pts[0]); // add tria1 points to tria3
 console.log("tria1", tria1.toString());
-const unionTriangles = Polygon.outerHull(tria1, tria2, tria3);
+const unionTriangles = Polygon.outerHull(tria0, tria1, tria2, tria3);
 console.log("unionTriangles", unionTriangles.toSVG());
 
 for (let x = 0; x<= 90; x+=10) {
