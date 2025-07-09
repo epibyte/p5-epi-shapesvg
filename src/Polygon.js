@@ -197,7 +197,7 @@ export default class Polygon {
    * @param {number} [prec=1] - Decimal precision
    * @returns {string}
    */
-  toSVG(prec = 1) { // stroke = "black", fill = "none", strokeWidth = 1
+  toSVG(prec = 2) { // stroke = "black", fill = "none", strokeWidth = 1
     let svgStr = "";
     for (const ring of this.pts) {
       if (ring.length === 0) continue;
