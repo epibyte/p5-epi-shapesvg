@@ -2,34 +2,73 @@ var EpiShapeSvg = (function (exports) {
   'use strict';
 
   // Class Point: represents a 2D point
+  /**
+   * Class Point: represents a 2D point
+   */
   class Point {
+    /**
+     * @param {number} [x=0]
+     * @param {number} [y=0]
+     */
     constructor(x = 0, y = 0) {
       this.set(x, y);
     }
 
+    /**
+     * Returns a copy of this point.
+     * @returns {Point}
+     */
     copy() {
       return new Point(this.x, this.y);
     }
     
+    /**
+     * Sets the x and y coordinates of the point.
+     * @param {number} x
+     * @param {number} y
+     * @returns {Point}
+     */
     set(x, y) {
       this.x = x;
       this.y = y;
       return this;
     }
     
+    /**
+     * Checks if this point equals another point within a given epsilon.
+     * @param {Point} otherPoint
+     * @param {number} [epsilon=1e-6]
+     * @returns {boolean}
+     */
     equals(otherPoint, epsilon = 1e-6) {
       return Math.abs(this.x - otherPoint.x) < epsilon && Math.abs(this.y - otherPoint.y) < epsilon;
     }
 
+    /**
+     * Returns the squared distance to another point.
+     * @param {Point} otherPoint
+     * @returns {number}
+     */
     distanceSqTo(otherPoint) {
       const dx = this.x - otherPoint.x;
       const dy = this.y - otherPoint.y;
       return dx * dx + dy * dy;
     }
+    /**
+     * Returns the distance to another point.
+     * @param {Point} otherPoint
+     * @returns {number}
+     */
     distanceTo(otherPoint) {
       return Math.sqrt(this.distanceSqTo(otherPoint));
     }
 
+    /**
+     * Returns a new point linearly interpolated between this and another point.
+     * @param {Point} otherPoint
+     * @param {number} f - Interpolation factor (0..1)
+     * @returns {Point}
+     */
     lerp(otherPoint, f) {
       return new Point(
         this.x + (otherPoint.x - this.x) * f,
@@ -37,14 +76,30 @@ var EpiShapeSvg = (function (exports) {
       );
     }
 
+    /**
+     * Returns a new point translated by a vector.
+     * @param {Point} vec
+     * @returns {Point}
+     */
     translate(vec) {
       return new Point(this.x + vec.x, this.y + vec.y);
     }
 
+    /**
+     * Returns a new point scaled by a factor.
+     * @param {number} scl
+     * @returns {Point}
+     */
     scale(scl) {
-  	  return new Point(this.x * scl, this.y * scl);
+      return new Point(this.x * scl, this.y * scl);
     }
 
+    /**
+     * Returns a new point rotated by angle (radians) around an origin.
+     * @param {number} angle - Angle in radians
+     * @param {Point|null} [origin=null] - Origin point (default: (0,0))
+     * @returns {Point}
+     */
     rotate(angle, origin = null) {
       if (origin == null) origin = new Point();
 
@@ -57,6 +112,11 @@ var EpiShapeSvg = (function (exports) {
     }
 
     // Check if a point is (just) in area
+    /**
+     * Checks if this point is within the bounding box of a segment.
+     * @param {Line} seg
+     * @returns {boolean}
+     */
     isInSegmentArea(seg) {
       const epsilon = 1e-6; // small tolerance for floating-point errors
       const p1 = seg.pt1;
@@ -69,21 +129,40 @@ var EpiShapeSvg = (function (exports) {
       );
     }
 
+    /**
+     * Returns a string representation of the point.
+     * @param {number} [prec=1] - Decimal precision
+     * @returns {string}
+     */
     toString(prec = 1) {
       return `Point(${this.x.toFixed(prec)}, ${this.y.toFixed(prec)})`;
     }
 
-    toSVG(prec = 1) {
+    /**
+     * Returns an SVG circle string for the point.
+     * @param {number} [prec=1] - Decimal precision
+     * @returns {string}
+     */
+    toSVG(prec = 2) {
       return `<circle cx="${this.x.toFixed(prec)}" cy="${this.y.toFixed(prec)}" r="2" />`;
     }
 
+    /**
+     * Draws the point using p5.js ellipse().
+     */
     drawShape() {
       ellipse(this.x, this.y, 5, 5);
     }
   }
 
-  // Class Line: uses Point objects
+  /**
+   * Class Line: represents a line segment between two Point objects
+   */
   class Line {
+    /**
+     * @param {Point} pt1 - Start point
+     * @param {Point} pt2 - End point
+     */
     constructor(pt1, pt2) {
       if (!(pt1 instanceof Point) || !(pt2 instanceof Point)) {
         throw new Error('Line constructor expects Point instances.');
@@ -92,18 +171,37 @@ var EpiShapeSvg = (function (exports) {
       this.pt2 = pt2;
     }
 
+    /**
+     * Returns the length of the line segment.
+     * @returns {number}
+     */
     length() {
       return this.pt1.distanceTo(this.pt2);
     }
 
+    /**
+     * Returns the midpoint of the line segment.
+     * @returns {Point}
+     */
     midPt() {
       return this.lerpPt(0.5);
     }
 
+    /**
+     * Returns a point interpolated along the line segment.
+     * @param {number} f - Interpolation factor (0..1)
+     * @returns {Point}
+     */
     lerpPt(f) {
       return this.pt1.lerp(this.pt2, f);
     }
 
+    /**
+     * Returns a new line interpolated between this and another line.
+     * @param {Line} otherLine
+     * @param {number} f - Interpolation factor (0..1)
+     * @returns {Line}
+     */
     lerpLine(otherLine, f) {
       return new Line(
         this.pt1.lerp(otherLine.pt1, f),
@@ -111,7 +209,11 @@ var EpiShapeSvg = (function (exports) {
       );
     }
 
-    // Line segment intersection algorithm
+    /**
+     * Returns the intersection point of this line segment with another, or null if no intersection.
+     * @param {Line} otherLine
+     * @returns {Point|null}
+     */
     segmentIntersection(otherLine) {
       const epsilon = 1e-6;
 
@@ -149,14 +251,27 @@ var EpiShapeSvg = (function (exports) {
       return null;
     }
 
+    /**
+     * Returns a string representation of the line.
+     * @param {number} [prec=1] - Decimal precision
+     * @returns {string}
+     */
     toString(prec = 1) {
       return `Line(${this.pt1.toString(prec)} -> ${this.pt2.toString(prec)})`;
     }
 
-    toSVG(prec = 1) {
+    /**
+     * Returns an SVG line string for the line segment.
+     * @param {number} [prec=2] - Decimal precision
+     * @returns {string}
+     */
+    toSVG(prec = 2) {
       return `<line x1="${this.pt1.x.toFixed(prec)}" y1="${this.pt1.y.toFixed(prec)}" x2="${this.pt2.x.toFixed(prec)}" y2="${this.pt2.y.toFixed(prec)}" />`;
     }
 
+    /**
+     * Draws the line using p5.js line().
+     */
     drawShape() {
       line(this.pt1.x, this.pt1.y, this.pt2.x, this.pt2.y);
     }
@@ -358,7 +473,7 @@ var EpiShapeSvg = (function (exports) {
      * @param {number} [prec=1] - Decimal precision
      * @returns {string}
      */
-    toSVG(prec = 1) { // stroke = "black", fill = "none", strokeWidth = 1
+    toSVG(prec = 2) { // stroke = "black", fill = "none", strokeWidth = 1
       let svgStr = "";
       for (const ring of this.pts) {
         if (ring.length === 0) continue;
