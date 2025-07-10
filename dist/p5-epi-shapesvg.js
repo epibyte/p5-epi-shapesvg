@@ -495,7 +495,7 @@ var EpiShapeSvg = (function (exports) {
         for (const pt of ring) {
           vertex(pt.x, pt.y);
         }
-        endShape(CLOSE);
+        endShape();
       }
     }
 

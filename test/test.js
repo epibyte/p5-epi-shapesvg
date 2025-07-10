@@ -106,9 +106,9 @@ const arc = Polygon.createArc(new Point(200, 200), new Point(150, 100), 0, Math.
 console.log('Arc:', arc.toSVG());
 
 console.log('\nShapes ClipTo\n');
-const sh1 = Polygon.createNEdge(3, 120, new Point(300, 300), 2.1);
+const sh1 = Polygon.createNEdge(3, 120, new Point(200, 200), 2.1);
 console.log('sh1:', sh1.toSVG());
-const sh2 = Polygon.createNEdge(3, 110, new Point(300, 300), 2.2);
+const sh2 = Polygon.createNEdge(3, 110, new Point(200, 220), 2.3);
 console.log('sh2:', sh2.toSVG());
-const shDiff = sh1.clipTo(sh2);
+const shDiff = sh1.clipTo(sh2, false);
 console.log('shDiff:', shDiff.toSVG());
