@@ -1,7 +1,6 @@
 import Point from './Point.js';
 import Line from './Line.js';
 
-// Class Line: uses Point objects, when CLOSEd, last point has to be same as first point
 /**
  * Polygon: Represents one or more polylines (rings), which can be open or closed.
  * Used for polygons, polylines, and collections of lines.
@@ -224,10 +223,8 @@ export default class Polygon {
     }
   }
 
-  // Clip points against the polygon boundary
-  // deprecated: use clipTo() instead
   /**
-   * (Deprecated) Clips a polyline (array of Points) against the polygon boundary.
+   * (Deprecated) Clips a polyline (array of Points) against the polygon boundary. Use clipTo() instead.
    * @param {Point[]} ptsArr
    * @param {number|null} [rotation=null]
    * @returns {Polygon}
@@ -337,8 +334,6 @@ export default class Polygon {
     return isInside;
   }
 
-
-  // calls isPointInPolygon() for each polygon and inverts result (XOR/DIFFERENCE)
   /**
    * Checks if a point is inside the polygon (handles multiple rings, XOR logic).
    * @param {Point} pt
@@ -497,7 +492,6 @@ export default class Polygon {
     return result;
   }
 
-  // Clip this polygon against another polygon, returning the merged result
   /**
    * Clips this polygon against another polygon, returning the merged result.
    * If otherPoly is null/empty, returns a copy of this polygon.
@@ -529,7 +523,6 @@ export default class Polygon {
     return mergedPoly;
   }
 
-  // Merge this polygon with another, 
   /**
    * Merges this polygon with another (concatenates rings).
    * @param {Polygon} other
