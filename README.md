@@ -1,4 +1,3 @@
-
 # p5-epi-shapesvg
 
 Helper for basic shape operations for js, e.g. p5.js, including SVG support.
@@ -22,6 +21,19 @@ Represents one or more polylines (rings), which can be open or closed. Used for 
   - `Polygon.createStar(nEdges, radiusOuter, radiusInner, center, rotation)` — create a star shape
   - `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment
   - `Polygon.outerHull(...polys)` — returns the union/outer hull of multiple polygons
+
+### Polygon.clipLine(p1, p2, inside = true)
+
+Clips a line segment against all rings of the polygon (multi-ring aware). Returns a new `Polygon` containing all inside (or outside) segments.
+
+**Parameters:**
+- `p1`, `p2`: Endpoints of the segment (Point)
+- `inside`: If true, keeps inside segments; else, outside (default: true)
+
+**Returns:**
+- `Polygon` containing all clipped segment(s) from all rings
+
+**Note:** This is robust for multi-ring polygons (with holes, islands, etc). For single-ring polygons, the behavior is unchanged.
 
 
 ## Usage Example (ES Module)

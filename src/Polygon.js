@@ -7,6 +7,7 @@ import Line from './Line.js';
  * Used for polygons, polylines, and collections of lines.
  */
 export default class Polygon {
+
   /**
    * @param {Point[]} [ptArr=[]] - Array of Point objects for the first ring
    * @param {boolean} [closePath=false] - Whether to close the first ring
@@ -359,62 +360,6 @@ export default class Polygon {
   }
 
   /**
-   * Clips a line segment against the polygon boundary (first ring).
-   * @param {Point} p1
-   * @param {Point} p2
-   * @param {boolean} [inside=true] - If true, keep inside segments; else, outside
-   * @returns {Polygon}
-   */
-  clipLine(p1, p2, inside = true) {
-    let intersectionPoints = [];
-
-    // Check intersections with all polygon edges
-    const boundaryPts = this.pts[0]; // Assuming the first ring is the boundary
-    const seg1 = new Line(p1, p2);
-    for (let i = 0; i < boundaryPts.length - 1; i++) {
-      let j = (i + 1) % boundaryPts.length;  // next vertex, wrapping around
-      let edgeStart = boundaryPts[i];
-      let edgeEnd = boundaryPts[j];
-      const seg2 = new Line(edgeStart, edgeEnd);
-      let intersection = seg1.segmentIntersection(seg2);
-      if (intersection) this.insertIntersectionPoint(intersectionPoints, intersection);
-    }
-
-    // Check if endpoints are inside the polygon
-    let p1Inside = this.isPointInPtsArr(p1, boundaryPts);
-    let p2Inside = this.isPointInPtsArr(p2, boundaryPts);
-
-    // Add the endpoints if they are inside/outside the polygon
-    if (inside) {	
-      if (p1Inside) this.insertIntersectionPoint(intersectionPoints, p1);
-      if (p2Inside) this.insertIntersectionPoint(intersectionPoints, p2);
-    } else {
-      if (!p1Inside) this.insertIntersectionPoint(intersectionPoints, p1);
-      if (!p2Inside) this.insertIntersectionPoint(intersectionPoints, p2);
-    }
-    // Sort intersection points by distance from p1
-    intersectionPoints.sort((a, b) => p1.distanceSqTo(a) - p1.distanceSqTo(b));
-
-    // ToDo: check issue, but only in debug mode
-    const debugMode = (intersectionPoints.length % 2 === 1) && false;
-    if (debugMode) { 
-      console.log("Debug Mode: Odd number of intersection points detected."); 
-      console.log(`${p1.x}, ${p1.y}, ${p2.x}, ${p2.y}`);
-      console.log(boundaryPts);
-      console.log(intersectionPoints);
-    }
-    
-    // Collect segments from intersection points
-    const segmentPoly = new Polygon();
-    for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
-      let start = intersectionPoints[i];
-      let end = intersectionPoints[i + 1];
-      segmentPoly.addPtsArr([start, end]);
-    }
-
-    return segmentPoly;
-  }
-  /**
    * Inserts a point into an array if not already present (within epsilon).
    * @param {Point[]} arr
    * @param {Point} newPt
@@ -434,7 +379,6 @@ export default class Polygon {
     return true;
   }
 
-  // Merge rings if last point of one equals first point of next
   /**
    * Merges rings if last point of one equals first point of next (within epsilon).
    * @param {number} [epsilon=1e-6]
@@ -479,6 +423,80 @@ export default class Polygon {
     return this;
   }
   
+  /**
+   * Clips a line segment against all rings of the polygon (multi-ring aware, XOR logic).
+   * For polygons with holes, alternates between inside/outside for each ring.
+   * @param {Point} p1
+   * @param {Point} p2
+   * @param {boolean} [inside=true] - If true, keep inside segments; else, outside
+   * @returns {Polygon}
+   */
+  clipLine(p1, p2, inside = true) {
+    // Start with the full segment as the initial input
+    let segments = [[p1, p2]];
+
+    // For each ring, always use the 'inside' parameter (no XOR logic)
+    for (let r = 0; r < this.pts.length; r++) {
+      const ring = this.pts[r];
+      if (!ring || ring.length < 2) {
+        continue;
+      }
+      let newSegments = [];
+
+      for (const [segStart, segEnd] of segments) {
+        // Clip this segment against the current ring
+        let intersectionPoints = [];
+        const seg1 = new Line(segStart, segEnd);
+        for (let i = 0; i < ring.length - 1; i++) {
+          let j = (i + 1) % ring.length;
+          let edgeStart = ring[i];
+          let edgeEnd = ring[j];
+          const seg2 = new Line(edgeStart, edgeEnd);
+          let intersection = seg1.segmentIntersection(seg2);
+          if (intersection) {
+            this.insertIntersectionPoint(intersectionPoints, intersection);
+          }
+        }
+        // Check if endpoints are inside the current ring
+        let segStartInside = this.isPointInPtsArr(segStart, ring);
+        let segEndInside = this.isPointInPtsArr(segEnd, ring);
+        if (inside) {
+          if (segStartInside) {
+            this.insertIntersectionPoint(intersectionPoints, segStart);
+          }
+          if (segEndInside) {
+            this.insertIntersectionPoint(intersectionPoints, segEnd);
+          }
+        } else {
+          if (!segStartInside) {
+            this.insertIntersectionPoint(intersectionPoints, segStart);
+          }
+          if (!segEndInside) {
+            this.insertIntersectionPoint(intersectionPoints, segEnd);
+          }
+        }
+        intersectionPoints.sort((a, b) => segStart.distanceSqTo(a) - segStart.distanceSqTo(b));
+        for (let i = 0; i < intersectionPoints.length - 1; i += 2) {
+          let start = intersectionPoints[i];
+          let end = intersectionPoints[i + 1];
+          newSegments.push([start, end]);
+        }
+      }
+      segments = newSegments;
+      if (segments.length === 0) {
+        break; // No segments left to process
+      }
+    }
+
+    // Collect all resulting segments into a Polygon
+    const result = new Polygon();
+    for (const [start, end] of segments) {
+      result.addPtsArr([start, end]);
+    }
+    result.optimize();
+    return result;
+  }
+
   // Clip this polygon against another polygon, returning the merged result
   /**
    * Clips this polygon against another polygon, returning the merged result.

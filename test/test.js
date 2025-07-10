@@ -2,6 +2,8 @@ import Point from '../src/Point.js';
 import Line from '../src/Line.js';
 import Polygon from '../src/Polygon.js';
 
+
+
 const p1 = new Point(10, 20);
 const p2 = new Point(30, 40);
 const l1 = new Line(p1, p2);
@@ -86,10 +88,8 @@ console.log("outerBox", outerBox.toSVG());
 const mergedShapes = outerStar.merge(outerBox);
 console.log("mergedShapes", mergedShapes.toSVG());
 // console.log("mergedShapes.optimize()", mergedShapes.optimize().toSVG());
-/*
-mergedShapes
-<polyline points="370.7,352.8 370.7,370.7 318.2,370.7 282.9,499.3 270.4,370.7 229.3,370.7 229.3,339.5 105.2,345.3 229.3,291.3 229.3,229.3 234.6,229.3 196.7,128.7 285.8,229.3 330.4,229.3 431.0,148.9 370.7,251.3 370.7,303.2 484.2,377.9 370.7,352.8" />
-*/
+// mergedShapes
+// <polyline points="370.7,352.8 370.7,370.7 318.2,370.7 282.9,499.3 270.4,370.7 229.3,370.7 229.3,339.5 105.2,345.3 229.3,291.3 229.3,229.3 234.6,229.3 196.7,128.7 285.8,229.3 330.4,229.3 431.0,148.9 370.7,251.3 370.7,303.2 484.2,377.9 370.7,352.8" />
 
 const multipleLinesPoly = new Polygon();
 for (let y = 100; y <= 500; y += 10) {
@@ -112,3 +112,35 @@ const sh2 = Polygon.createNEdge(3, 110, new Point(200, 220), 2.3);
 console.log('sh2:', sh2.toSVG());
 const shDiff = sh1.clipTo(sh2, false);
 console.log('shDiff:', shDiff.toSVG());
+
+
+
+
+// Test: clipLine with two overlapping rings (not hole)
+console.log('\nclipLine with two overlapping rings (XOR logic)');
+// First shape: left rectangle
+const polyRing1 = new Polygon([
+  new Point(10, 40), new Point(50, 40), new Point(50, 60), new Point(10, 60)
+], true);
+// Second shape: right rectangle, slightly overlapping
+const polyRing2 = new Polygon([
+  new Point(30, 30), new Point(70, 30), new Point(70, 70), new Point(30, 70)
+], true);
+const polyTwoRings = new Polygon();
+polyTwoRings.merge(polyRing1).merge(polyRing2);
+console.log('polyTwoRings:', polyTwoRings.toString());
+console.log('polyRing1:', polyRing1.toSVG()); 
+console.log('polyRing2:', polyRing2.toSVG());
+
+// Line crossing both rectangles
+const testLineStart = new Point(0, 50);
+const testLineEnd = new Point(90, 50);
+console.log('testLineStart:', testLineStart.toString());
+console.log('testLineEnd:', testLineEnd.toString());
+const clippedInside = polyTwoRings.clipLine(testLineStart, testLineEnd);
+console.log('clippedInside.pts:', JSON.stringify(clippedInside.pts));
+console.log('clippedInside.toSVG():', clippedInside.toSVG());
+// Now test for outside (should give the outside segments)
+const clippedOutside = polyTwoRings.clipLine(testLineStart, testLineEnd, false);
+console.log('clippedOutside.pts:', JSON.stringify(clippedOutside.pts));
+console.log('clippedOutside.toSVG():', clippedOutside.toSVG());
