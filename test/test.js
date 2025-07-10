@@ -25,7 +25,7 @@ console.log('translate():', l1tp.toString());
 console.log('isInSegmentArea():', l1tp.isInSegmentArea(l1));
 console.log('Segment Intersection:', intersection); 
 
-const poly5edge = Polygon.createNEdges(5, 100, new Point(40, 60), Math.PI / 4);
+const poly5edge = Polygon.createNEdge(5, 100, new Point(40, 60), Math.PI / 4);
 console.log(poly5edge.toString());
 
 const polyEmpty = new Polygon();
@@ -70,7 +70,7 @@ console.log('clippedLinePoly.toSVG():', clippedLinePoly.toSVG());
 console.log('\nStar\n');
 
 const starRad = 200;
-const mbox = Polygon.createNEdges(4, starRad/2, new Point(starRad+100, starRad+100), Math.PI/4);
+const mbox = Polygon.createNEdge(4, starRad/2, new Point(starRad+100, starRad+100), Math.PI/4);
 // mbox.drawShape();
 const star = Polygon.createStar(5, starRad, starRad/4, new Point(starRad+100, starRad+100), 0.4);
 // star.drawShape();
@@ -85,7 +85,8 @@ console.log("outerBox", outerBox.toSVG());
 
 const mergedShapes = outerStar.merge(outerBox);
 console.log("mergedShapes", mergedShapes.toSVG());
-console.log("mergedShapes.optimize()", mergedShapes.optimize().toSVG());/*
+// console.log("mergedShapes.optimize()", mergedShapes.optimize().toSVG());
+/*
 mergedShapes
 <polyline points="370.7,352.8 370.7,370.7 318.2,370.7 282.9,499.3 270.4,370.7 229.3,370.7 229.3,339.5 105.2,345.3 229.3,291.3 229.3,229.3 234.6,229.3 196.7,128.7 285.8,229.3 330.4,229.3 431.0,148.9 370.7,251.3 370.7,303.2 484.2,377.9 370.7,352.8" />
 */
@@ -103,3 +104,11 @@ console.log('Hashed Lines optimized:', hashedLines.optimize().toSVG());
 console.log('\nArc\n');
 const arc = Polygon.createArc(new Point(200, 200), new Point(150, 100), 0, Math.PI / 2);
 console.log('Arc:', arc.toSVG());
+
+console.log('\nShapes ClipTo\n');
+const sh1 = Polygon.createNEdge(3, 120, new Point(300, 300), 2.1);
+console.log('sh1:', sh1.toSVG());
+const sh2 = Polygon.createNEdge(3, 110, new Point(300, 300), 2.2);
+console.log('sh2:', sh2.toSVG());
+const shDiff = sh1.clipTo(sh2);
+console.log('shDiff:', shDiff.toSVG());

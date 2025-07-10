@@ -364,7 +364,7 @@ var EpiShapeSvg = (function (exports) {
      * @param {number} [rotation=0]
      * @returns {Polygon}
      */
-    static createNEdges(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
+    static createNEdge(nEdges, radius = 100, center = new Point(0, 0), rotation = 0) {
       const pts = [];
       if (nEdges < 3) {
         throw new Error('Polygon must have at least 3 edges.');
@@ -410,7 +410,7 @@ var EpiShapeSvg = (function (exports) {
     /**
      * Creates an arc or ellipse segment as a polygon.
      * @param {Point} center - Center of the arc
-     * @param {{x:number, y:number}} dim - Width (x) and height (y) of the ellipse
+     * @param {Point} dim - Width (x) and height (y) of the ellipse
      * @param {number} startAngle - Start angle (radians)
      * @param {number} stopAngle - Stop angle (radians)
      * @param {number|null} [rotation=null] - Optional rotation (radians)
@@ -565,8 +565,6 @@ var EpiShapeSvg = (function (exports) {
       return segmentPoly;
     }
 
-
-    // Check if point is on segment (line) between two points
     /**
      * Checks if a point is on the segment between two points.
      * @param {Point} pt
@@ -791,6 +789,7 @@ var EpiShapeSvg = (function (exports) {
      */
     merge(other) {
       this.pts = [...this.pts, ...other.pts];
+      this.optimize(); // Merge rings if last point of one equals first point of next
       return this;
     }
     
