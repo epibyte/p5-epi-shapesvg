@@ -2,6 +2,17 @@
 
 Helper for basic shape operations for js, e.g. p5.js, including SVG support.
 
+## What Makes This Different
+
+Unlike other polygon clipping libraries such as [clipper2-js](https://www.npmjs.com/package/clipper2-js) or [polygon-clipping](https://www.npmjs.com/package/polygon-clipping), this library preserves **outlines/paths** after clipping operations instead of returning filled polygons. This is particularly valuable for:
+
+- **Plotter/Pen Drawing**: No multiple strokes on polygon edges - each line is drawn only once
+- **SVG Generation**: Clean polylines without redundant overlapping paths
+- **CAD/Technical Drawing**: Precise path-based operations for manufacturing
+- **Artistic Applications**: Maintaining stroke-based artwork integrity
+
+The `clipTo()` method returns a collection of line segments (paths) rather than solid polygon regions, making it ideal for stroke-based rendering and plotting applications.
+
 ## Class Overview
 
 ### Point
@@ -36,42 +47,46 @@ Clips a line segment against all rings of the polygon (multi-ring aware). Return
 **Note:** This is robust for multi-ring polygons (with holes, islands, etc). For single-ring polygons, the behavior is unchanged.
 
 
-## Usage Example (ES Module)
+## Usage Examples
+
+### 1. ES Module Integration
 
 ```js
 import Point from './src/Point.js';
 import Line from './src/Line.js';
 import Polygon from './src/Polygon.js';
-
-// Create triangles
-const tria1 = new Polygon([new Point(10, 50), new Point(50, 10), new Point(90, 50)], true);
-const tria2 = new Polygon([new Point(10, 70), new Point(50, 30), new Point(90, 70)], true);
-const tria3 = new Polygon([new Point(10, 20), new Point(90, 20), new Point(50, 60)], true);
-
-// Compute the union (outer hull) of three triangles
-const unionTriangles = Polygon.outerHull(tria1, tria2, tria3);
-console.log('Union as SVG:', unionTriangles.toSVG());
-
-// Clip a set of lines against a polygon
-const multipleLinesPoly = new Polygon();
-for (let y = 100; y <= 500; y += 10) {
-  multipleLinesPoly.addPtsArr([new Point(100, y), new Point(500, y)]);
-}
-const hashedLines = multipleLinesPoly.clipTo(unionTriangles);
-console.log('Clipped lines as SVG:', hashedLines.toSVG());
 ```
 
-## Usage Example (OpenProcessing / CDN)
+### 2. OpenProcessing Integration
 
-1. In OpenProcessing, go to **Sketch > Libraries > Add .js File** and paste URL:
-   
-   `https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js`
+In OpenProcessing, go to **Sketch > Libraries > Add .js File** and paste URL:
 
-2. Use the classes from the global `EpiShapeSvg` object:
+`https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js`
+
+Then use the classes from the global object:
 
 ```js
 const { Point, Line, Polygon } = EpiShapeSvg;
+```
 
+### 3. p5.js Web Editor Integration
+
+In the p5.js Web Editor, add this line at the top of your sketch:
+
+```js
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js';
+document.head.appendChild(script);
+
+// Use after the script loads
+const { Point, Line, Polygon } = EpiShapeSvg;
+```
+
+**Live Example**: [https://editor.p5js.org/epibyte/sketches/07wEBZmvE](https://editor.p5js.org/epibyte/sketches/07wEBZmvE)
+
+### Example Code (works with all integrations)
+
+```js
 // Create triangles
 const tria1 = new Polygon([new Point(10, 50), new Point(50, 10), new Point(90, 50)], true);
 const tria2 = new Polygon([new Point(10, 70), new Point(50, 30), new Point(90, 70)], true);
@@ -83,8 +98,8 @@ console.log('Union as SVG:', unionTriangles.toSVG());
 
 // Clip a set of lines against a polygon
 const multipleLinesPoly = new Polygon();
-for (let y = 100; y <= 500; y += 10) {
-  multipleLinesPoly.addPtsArr([new Point(100, y), new Point(500, y)]);
+for (let y = 3; y <= 100; y += 3) {
+  multipleLinesPoly.addPtsArr([new Point(50, y), new Point(500, y)]);
 }
 const hashedLines = multipleLinesPoly.clipTo(unionTriangles);
 console.log('Clipped lines as SVG:', hashedLines.toSVG());
