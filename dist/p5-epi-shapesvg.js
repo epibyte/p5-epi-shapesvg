@@ -7,11 +7,21 @@ var EpiShapeSvg = (function (exports) {
    */
   class Point {
     /**
-     * @param {number} [x=0]
-     * @param {number} [y=0]
+     * @param {number|{x:number,y:number}|[number,number]} [x=0] - X coordinate, {x,y} object, or [x,y] array
+     * @param {number} [y=0] - Y coordinate (ignored if first parameter is object or array)
      */
     constructor(x = 0, y = 0) {
-      this.set(x, y);
+      // Handle different input formats
+      if (Array.isArray(x) && x.length >= 2) {
+        // [x, y] array format
+        this.set(x[0], x[1]);
+      } else if (x && typeof x === 'object' && 'x' in x && 'y' in x) {
+        // {x, y} object format
+        this.set(x.x, x.y);
+      } else {
+        // Standard x, y parameters
+        this.set(x, y);
+      }
     }
 
     /**
@@ -277,7 +287,6 @@ var EpiShapeSvg = (function (exports) {
     }
   }
 
-  // Class Line: uses Point objects, when CLOSEd, last point has to be same as first point
   /**
    * Polygon: Represents one or more polylines (rings), which can be open or closed.
    * Used for polygons, polylines, and collections of lines.
@@ -285,17 +294,14 @@ var EpiShapeSvg = (function (exports) {
   class Polygon {
 
     /**
-     * @param {Point[]} [ptArr=[]] - Array of Point objects for the first ring
+     * @param {Point[]|Array<{x:number,y:number}>|Array<[number,number]>} [ptArr=[]] - Array of Point objects, {x,y} objects, or [x,y] arrays for the first ring
      * @param {boolean} [closePath=false] - Whether to close the first ring
      */
     constructor(ptArr = [], closePath = false) {
       // can be also multiple polygons
       this.pts = [];
       if (ptArr && ptArr.length) {
-        this.pts.push([...ptArr]);
-        if (closePath) {
-          this.closeLastPath();
-        }
+        this.addPtsArr(ptArr, closePath);
       }
     }
 
@@ -338,9 +344,9 @@ var EpiShapeSvg = (function (exports) {
     }
 
     /**
-     * Adds an array of Points (or {x, y} objects) as a new ring.
-     * Converts {x, y} objects to Point if needed.
-     * @param {Array<Point|{x:number,y:number}>} ptsArr
+     * Adds an array of Points (or {x, y} objects, or [x, y] arrays) as a new ring.
+     * All formats are automatically converted to Point instances.
+     * @param {Array<Point|{x:number,y:number}|[number,number]>} ptsArr
      * @param {boolean} [closePath=false]
      * @returns {Polygon}
      */
@@ -348,8 +354,8 @@ var EpiShapeSvg = (function (exports) {
       if (!Array.isArray(ptsArr)) {
         throw new Error('addPtsArr expects an array.');
       }
-      // Convert {x, y} objects to Point if needed
-      const pts = ptsArr.map(pt => (pt instanceof Point ? pt : new Point(pt.x, pt.y)));
+      // Convert all formats to Point instances - Point constructor handles the conversion
+      const pts = ptsArr.map(pt => pt instanceof Point ? pt : new Point(pt));
       this.pts.push(pts);
       if (closePath && pts.length) {
         this.closeLastPath();
@@ -500,10 +506,8 @@ var EpiShapeSvg = (function (exports) {
       }
     }
 
-    // Clip points against the polygon boundary
-    // deprecated: use clipTo() instead
     /**
-     * (Deprecated) Clips a polyline (array of Points) against the polygon boundary.
+     * (Deprecated) Clips a polyline (array of Points) against the polygon boundary. Use clipTo() instead.
      * @param {Point[]} ptsArr
      * @param {number|null} [rotation=null]
      * @returns {Polygon}
@@ -613,8 +617,6 @@ var EpiShapeSvg = (function (exports) {
       return isInside;
     }
 
-
-    // calls isPointInPolygon() for each polygon and inverts result (XOR/DIFFERENCE)
     /**
      * Checks if a point is inside the polygon (handles multiple rings, XOR logic).
      * @param {Point} pt
@@ -773,7 +775,6 @@ var EpiShapeSvg = (function (exports) {
       return result;
     }
 
-    // Clip this polygon against another polygon, returning the merged result
     /**
      * Clips this polygon against another polygon, returning the merged result.
      * If otherPoly is null/empty, returns a copy of this polygon.
@@ -805,7 +806,6 @@ var EpiShapeSvg = (function (exports) {
       return mergedPoly;
     }
 
-    // Merge this polygon with another, 
     /**
      * Merges this polygon with another (concatenates rings).
      * @param {Polygon} other
