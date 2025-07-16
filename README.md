@@ -90,6 +90,20 @@ const hashedLines = multipleLinesPoly.clipTo(unionTriangles);
 console.log('Clipped lines as SVG:', hashedLines.toSVG());
 ```
 
+## Testing
+
+Run the comprehensive test suite to verify all functionality:
+
+```bash
+# Run all tests
+node test/run-all-tests.js
+
+# Or using npm
+npm test
+```
+
+The test suite includes 62+ tests covering Point, Line, and Polygon classes with edge cases, mathematical accuracy, and geometric operations.
+
 ## Notes
 - All classes are designed for use with p5.js and SVG workflows.
 - `Polygon` can represent both polygons and polylines (open or closed).

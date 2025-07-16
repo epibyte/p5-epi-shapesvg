@@ -1,0 +1,16 @@
+{
+  "name": "p5-epi-shapesvg",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Helper for basic shape operations for js, e.g. p5.js, including SVG support",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/run-all-tests.js",
+    "test:point": "node test/point-tests.js",
+    "test:line": "node test/line-tests.js",
+    "test:polygon": "node test/polygon-tests.js"
+  },
+  "keywords": ["p5js", "geometry", "svg", "shapes"],
+  "author": "epibyte",
+  "license": "MIT"
+}
