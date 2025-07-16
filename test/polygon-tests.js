@@ -61,6 +61,30 @@ runner.describe('Polygon', () => {
     runner.assertTrue(poly.pts[0][0] instanceof Point);
   });
 
+  runner.test('addPtsArr with [x,y] arrays', () => {
+    const poly = new Polygon();
+    const points = [[0, 0], [10, 0], [5, 10]];
+    poly.addPtsArr(points);
+    
+    runner.assertEqual(poly.pts.length, 1);
+    runner.assertEqual(poly.pts[0].length, 3);
+    runner.assertTrue(poly.pts[0][0] instanceof Point);
+    runner.assertEqual(poly.pts[0][0].x, 0);
+    runner.assertEqual(poly.pts[0][0].y, 0);
+  });
+
+  runner.test('constructor with [x,y] arrays', () => {
+    const points = [[0, 0], [10, 0], [5, 10]];
+    const poly = new Polygon(points);
+    
+    runner.assertEqual(poly.pts.length, 1);
+    runner.assertEqual(poly.pts[0].length, 3);
+    runner.assertTrue(poly.pts[0][0] instanceof Point);
+    runner.assertEqual(poly.pts[0][0].x, 0);
+    runner.assertEqual(poly.pts[0][2].x, 5);
+    runner.assertEqual(poly.pts[0][2].y, 10);
+  });
+
   runner.test('closeLastPath closes open path', () => {
     const points = [new Point(0, 0), new Point(10, 0), new Point(5, 10)];
     const poly = new Polygon(points);

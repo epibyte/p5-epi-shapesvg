@@ -16,7 +16,11 @@ The `clipTo()` method returns a collection of line segments (paths) rather than 
 ## Class Overview
 
 ### Point
-Represents a 2D point with x and y coordinates.
+Represents a 2D point with x and y coordinates. The constructor accepts multiple formats:
+- `new Point(x, y)` - Standard x, y coordinates
+- `new Point({x, y})` - Object with x and y properties
+- `new Point([x, y])` - Array with x and y values
+
 - Methods: `copy()`, `set(x, y)`, `equals(otherPoint, epsilon)`, `distanceTo(otherPoint)`, `lerp(otherPoint, f)`, `translate(vec)`
 
 ### Line
@@ -87,10 +91,10 @@ const { Point, Line, Polygon } = EpiShapeSvg;
 ### Example Code (works with all integrations)
 
 ```js
-// Create triangles
+// Create triangles - showing different Point constructor formats
 const tria1 = new Polygon([new Point(10, 50), new Point(50, 10), new Point(90, 50)], true);
-const tria2 = new Polygon([new Point(10, 70), new Point(50, 30), new Point(90, 70)], true);
-const tria3 = new Polygon([new Point(10, 20), new Point(90, 20), new Point(50, 60)], true);
+const tria2 = new Polygon([new Point({x: 10, y: 70}), new Point({x: 50, y: 30}), new Point({x: 90, y: 70})], true);
+const tria3 = new Polygon([new Point([10, 20]), new Point([90, 20]), new Point([50, 60])], true);
 
 // Compute the union (outer hull) of three triangles
 const unionTriangles = Polygon.outerHull(tria1, tria2, tria3);
@@ -117,7 +121,7 @@ node test/run-all-tests.js
 npm test
 ```
 
-The test suite includes 62+ tests covering Point, Line, and Polygon classes with edge cases, mathematical accuracy, and geometric operations.
+The test suite includes 67 tests covering Point, Line, and Polygon classes with edge cases, mathematical accuracy, and geometric operations.
 
 ## Notes
 - All classes are designed for use with p5.js and SVG workflows.

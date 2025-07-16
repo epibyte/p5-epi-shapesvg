@@ -8,17 +8,14 @@ import Line from './Line.js';
 export default class Polygon {
 
   /**
-   * @param {Point[]} [ptArr=[]] - Array of Point objects for the first ring
+   * @param {Point[]|Array<{x:number,y:number}>|Array<[number,number]>} [ptArr=[]] - Array of Point objects, {x,y} objects, or [x,y] arrays for the first ring
    * @param {boolean} [closePath=false] - Whether to close the first ring
    */
   constructor(ptArr = [], closePath = false) {
     // can be also multiple polygons
     this.pts = [];
     if (ptArr && ptArr.length) {
-      this.pts.push([...ptArr]);
-      if (closePath) {
-        this.closeLastPath();
-      }
+      this.addPtsArr(ptArr, closePath);
     }
   }
 
@@ -61,9 +58,9 @@ export default class Polygon {
   }
 
   /**
-   * Adds an array of Points (or {x, y} objects) as a new ring.
-   * Converts {x, y} objects to Point if needed.
-   * @param {Array<Point|{x:number,y:number}>} ptsArr
+   * Adds an array of Points (or {x, y} objects, or [x, y] arrays) as a new ring.
+   * All formats are automatically converted to Point instances.
+   * @param {Array<Point|{x:number,y:number}|[number,number]>} ptsArr
    * @param {boolean} [closePath=false]
    * @returns {Polygon}
    */
@@ -71,8 +68,8 @@ export default class Polygon {
     if (!Array.isArray(ptsArr)) {
       throw new Error('addPtsArr expects an array.');
     }
-    // Convert {x, y} objects to Point if needed
-    const pts = ptsArr.map(pt => (pt instanceof Point ? pt : new Point(pt.x, pt.y)));
+    // Convert all formats to Point instances - Point constructor handles the conversion
+    const pts = ptsArr.map(pt => pt instanceof Point ? pt : new Point(pt));
     this.pts.push(pts);
     if (closePath && pts.length) {
       this.closeLastPath();

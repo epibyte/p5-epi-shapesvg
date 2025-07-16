@@ -4,11 +4,21 @@
  */
 export default class Point {
   /**
-   * @param {number} [x=0]
-   * @param {number} [y=0]
+   * @param {number|{x:number,y:number}|[number,number]} [x=0] - X coordinate, {x,y} object, or [x,y] array
+   * @param {number} [y=0] - Y coordinate (ignored if first parameter is object or array)
    */
   constructor(x = 0, y = 0) {
-    this.set(x, y);
+    // Handle different input formats
+    if (Array.isArray(x) && x.length >= 2) {
+      // [x, y] array format
+      this.set(x[0], x[1]);
+    } else if (x && typeof x === 'object' && 'x' in x && 'y' in x) {
+      // {x, y} object format
+      this.set(x.x, x.y);
+    } else {
+      // Standard x, y parameters
+      this.set(x, y);
+    }
   }
 
   /**

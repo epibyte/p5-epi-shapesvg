@@ -17,6 +17,24 @@ runner.describe('Point', () => {
     runner.assertEqual(p.y, 20);
   });
 
+  runner.test('constructor with {x,y} object', () => {
+    const p = new Point({x: 15, y: 25});
+    runner.assertEqual(p.x, 15);
+    runner.assertEqual(p.y, 25);
+  });
+
+  runner.test('constructor with [x,y] array', () => {
+    const p = new Point([30, 40]);
+    runner.assertEqual(p.x, 30);
+    runner.assertEqual(p.y, 40);
+  });
+
+  runner.test('constructor with [x,y] array ignores extra elements', () => {
+    const p = new Point([50, 60, 70, 80]);
+    runner.assertEqual(p.x, 50);
+    runner.assertEqual(p.y, 60);
+  });
+
   runner.test('copy creates independent copy', () => {
     const p1 = new Point(5, 10);
     const p2 = p1.copy();
