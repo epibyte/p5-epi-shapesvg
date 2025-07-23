@@ -811,9 +811,11 @@ var EpiShapeSvg = (function (exports) {
      * @param {Polygon} other
      * @returns {Polygon}
      */
-    merge(other) {
+    merge(other, optimize = true) {
       this.pts = [...this.pts, ...other.pts];
-      this.optimize(); // Merge rings if last point of one equals first point of next
+      if (optimize) {
+        this.optimize(); // Merge rings if last point of one equals first point of next
+      }
       return this;
     }
     
@@ -843,7 +845,7 @@ var EpiShapeSvg = (function (exports) {
       // Merge all outer segments and optimize
       let union = new Polygon();
       for (const outer of outers) {
-        union.merge(outer);
+        union.merge(outer, false);
       }
       return union.optimize();
     }
