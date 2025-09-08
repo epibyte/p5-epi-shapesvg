@@ -32,9 +32,9 @@ Represents a line segment between two `Point` objects.
 Represents one or more polylines (rings), which can be open or closed. Used for polygons, polylines, and collections of lines.
 - Methods: `addPoint(pt)`, `addPtsArr(ptsArr, closePath)`, `closeLastPath()`, `merge(other)`, `optimize()`, `clipTo(otherPoly, inside, rotation)`, `clipLine(p1, p2, inside)`, `isPointIn(pt)`, `toSVG(prec)`, `drawShape()`
 - Static Methods:
-  - `Polygon.createNEdges(nEdges, radius, center, rotation)` — create a regular polygon
-  - `Polygon.createStar(nEdges, radiusOuter, radiusInner, center, rotation)` — create a star shape
-  - `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment
+  - `Polygon.createNEdges(nEdges, radius, center, rotation)` — create a regular polygon. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
+  - `Polygon.createStar(nEdges, radiusOuter, radiusInner, center, rotation)` — create a star shape. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
+  - `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment. Both `center` and `dim` can be a `Point`, `{x, y}` object, or `[x, y]` array. Returns an open path by default.
   - `Polygon.outerHull(...polys)` — returns the union/outer hull of multiple polygons
 
 ### Polygon.clipLine(p1, p2, inside = true)

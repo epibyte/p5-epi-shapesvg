@@ -52,7 +52,7 @@ export default class Polygon {
    * @returns {Polygon}
    */
   addPoint(pt) {
-    if (!(pt instanceof Point)) { throw new Error('addPoint expects a Point instance.'); }
+    pt = pt instanceof Point ? pt : new Point(pt);
     this.pts[this.pts.length-1].push(pt);
     return this;
   }
@@ -90,6 +90,7 @@ export default class Polygon {
     if (nEdges < 3) {
       throw new Error('Polygon must have at least 3 edges.');
     }
+    center = center instanceof Point ? center : new Point(center);
     const angleStep = (Math.PI * 2) / nEdges;
     for (let i = 0; i < nEdges; i++) {
       const angle = i * angleStep + rotation;
@@ -115,6 +116,7 @@ export default class Polygon {
     if (nEdges < 3) {
       throw new Error('Polygon must have at least 3 edges.');
     }
+    center = center instanceof Point ? center : new Point(center);
     const angleStep = (Math.PI * 2) / nEdges / 2;
     const radii = [radiusOuter, radiusInner];
     for (let i = 0; i < nEdges * 2; i++) {
@@ -138,6 +140,8 @@ export default class Polygon {
    * @returns {Polygon}
    */
   static createArc(center, dim, startAngle, stopAngle, rotation = null) {
+    center = center instanceof Point ? center : new Point(center);
+    dim = dim instanceof Point ? dim : new Point(dim);
     const len = 4;
     const cir = 2 * Math.PI * (dim.x + dim.y) / 2; // approximation
     const num = Math.max(3, ~~(cir / len * (stopAngle - startAngle) / (2 * Math.PI)));
@@ -159,7 +163,7 @@ export default class Polygon {
       pts.push(pt);
     }
     
-    return new Polygon(pts, true);
+    return new Polygon(pts, false);
   }
 
   /**
