@@ -14,6 +14,8 @@ export default class Polygon {
   constructor(ptArr = [], closePath = false) {
     // can be also multiple polygons
     this.pts = [];
+    // Cached bounding box: { minX, minY, maxX, maxY, width, height } or null
+    this.bbox = null;
     if (ptArr && ptArr.length) {
       this.addPtsArr(ptArr, closePath);
     }
@@ -494,7 +496,53 @@ export default class Polygon {
         ring[i] = ring[i].rotate(angle, origin);
       }
     }
+    // invalidate bbox cache
+    this.bbox = null;
     return this;
+  }
+
+  /**
+   * Compute and store bounding box covering all rings
+   * Sets `this.bbox` to an object: { minX, minY, maxX, maxY, width, height }
+   * Returns the bbox object (or null if polygon has no points)
+   * @returns {{minX:number,minY:number,maxX:number,maxY:number,width:number,height:number}|null}
+   */
+  createBBox() {
+    if (!Array.isArray(this.pts) || this.pts.length === 0) {
+      this.bbox = null;
+      return null;
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let found = false;
+    for (const ring of this.pts) {
+      if (!Array.isArray(ring)) continue;
+      for (const p of ring) {
+        if (!p) continue;
+        found = true;
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+
+    if (!found) {
+      this.bbox = null;
+      return null;
+    }
+
+    const bbox = {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+
+    this.bbox = bbox;
+    return bbox;
   }
   
   /**

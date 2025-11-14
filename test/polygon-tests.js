@@ -328,6 +328,21 @@ runner.describe('Polygon', () => {
     runner.assertAlmostEqual(poly.pts[0][1].y, 2, 1e-10);
   });
 
+  runner.test('createBBox computes bounding box correctly', () => {
+    const poly = new Polygon([
+      new Point(1,2), new Point(3,4), new Point(-1,5)
+    ], false);
+    const bbox = poly.createBBox();
+    runner.assertAlmostEqual(bbox.minX, -1, 1e-10);
+    runner.assertAlmostEqual(bbox.minY, 2, 1e-10);
+    runner.assertAlmostEqual(bbox.maxX, 3, 1e-10);
+    runner.assertAlmostEqual(bbox.maxY, 5, 1e-10);
+    runner.assertAlmostEqual(bbox.width, 4, 1e-10);
+    runner.assertAlmostEqual(bbox.height, 3, 1e-10);
+    // ensure polygon.bbox is set
+    runner.assertEqual(poly.bbox, bbox);
+  });
+
 });
 
 export default runner;
