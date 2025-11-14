@@ -33,6 +33,8 @@ export default class Polygon {
       // Deep copy each Point in the ring
       newPoly.pts.push(ring.map(pt => pt.copy()));
     }
+    // Update bbox for the copy
+    newPoly.calcBBox();
     return newPoly;
   }
 
@@ -47,6 +49,8 @@ export default class Polygon {
         ring.push(ring[0]);
       }
     }
+    // Update bbox when closing path
+    this.calcBBox();
     return this;
   }
 
@@ -424,6 +428,8 @@ export default class Polygon {
     }
   
     this.pts = merged;
+    // Update bbox after optimize
+    this.calcBBox();
     return this;
   }
 
@@ -485,6 +491,8 @@ export default class Polygon {
         p.set(p.x + vec.x, p.y + vec.y);
       }
     }
+    // update bbox after translation
+    this.calcBBox();
     return this;
   }
 
@@ -627,6 +635,7 @@ export default class Polygon {
       result.addPtsArr([start, end]);
     }
     result.optimize();
+    result.calcBBox();
     return result;
   }
 
@@ -657,7 +666,8 @@ export default class Polygon {
         }
       }
     }
-    mergedPoly.optimize(); // Merge rings if last point of one equals first point of next  
+    mergedPoly.optimize(); // Merge rings if last point of one equals first point of next
+    mergedPoly.calcBBox();
     return mergedPoly;
   }
 
@@ -671,6 +681,8 @@ export default class Polygon {
     if (optimize) {
       this.optimize(); // Merge rings if last point of one equals first point of next
     }
+    // Update bbox after merge
+    this.calcBBox();
     return this;
   }
   
