@@ -265,6 +265,46 @@ runner.describe('Polygon', () => {
     runner.assert(union instanceof Polygon);
   });
 
+  runner.test('isOverlapping returns true for overlapping squares', () => {
+    const a = new Polygon([
+      new Point(0,0), new Point(10,0), new Point(10,10), new Point(0,10)
+    ], true);
+    const b = new Polygon([
+      new Point(5,5), new Point(15,5), new Point(15,15), new Point(5,15)
+    ], true);
+    runner.assertTrue(a.isOverlapping(b));
+  });
+
+  runner.test('isOverlapping returns false for edge-touching squares', () => {
+    const a = new Polygon([
+      new Point(0,0), new Point(10,0), new Point(10,10), new Point(0,10)
+    ], true);
+    const b = new Polygon([
+      new Point(10,0), new Point(20,0), new Point(20,10), new Point(10,10)
+    ], true);
+    runner.assertFalse(a.isOverlapping(b));
+  });
+
+  runner.test('isOverlapping returns true when one polygon inside another', () => {
+    const outer = new Polygon([
+      new Point(0,0), new Point(20,0), new Point(20,20), new Point(0,20)
+    ], true);
+    const inner = new Polygon([
+      new Point(5,5), new Point(10,5), new Point(10,10), new Point(5,10)
+    ], true);
+    runner.assertTrue(outer.isOverlapping(inner));
+  });
+
+  runner.test('isOverlapping returns false for disjoint polygons', () => {
+    const a = new Polygon([
+      new Point(0,0), new Point(10,0), new Point(10,10), new Point(0,10)
+    ], true);
+    const b = new Polygon([
+      new Point(20,20), new Point(30,20), new Point(30,30), new Point(20,30)
+    ], true);
+    runner.assertFalse(a.isOverlapping(b));
+  });
+
 });
 
 export default runner;
