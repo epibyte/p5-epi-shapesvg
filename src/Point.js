@@ -94,11 +94,32 @@ export default class Point {
 
   /**
    * Returns a new point scaled by a factor.
-   * @param {number} scl
+   * Supports uniform scale (number) or non-uniform scale as Point/{x,y}/[x,y].
+   * Optional `origin` specifies the point to scale around (default (0,0)).
+   * @param {number|Point|{x:number,y:number}|[number,number]} scl
+   * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null]
    * @returns {Point}
    */
-  scale(scl) {
-    return new Point(this.x * scl, this.y * scl);
+  scale(scl, origin = null) {
+    let sx, sy;
+    if (typeof scl === 'number') {
+      sx = sy = scl;
+    } else if (scl instanceof Point) {
+      sx = scl.x; sy = scl.y;
+    } else if (Array.isArray(scl) && scl.length >= 2) {
+      sx = scl[0]; sy = scl[1];
+    } else if (scl && typeof scl === 'object' && 'x' in scl && 'y' in scl) {
+      sx = scl.x; sy = scl.y;
+    } else {
+      throw new Error('Point.scale(): invalid scale parameter');
+    }
+
+    if (origin == null) origin = new Point();
+    else origin = origin instanceof Point ? origin : new Point(origin);
+
+    const nx = origin.x + (this.x - origin.x) * sx;
+    const ny = origin.y + (this.y - origin.y) * sy;
+    return new Point(nx, ny);
   }
 
   /**

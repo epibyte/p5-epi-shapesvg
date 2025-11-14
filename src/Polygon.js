@@ -517,6 +517,43 @@ export default class Polygon {
   }
 
   /**
+   * Scale all points of the polygon around an origin.
+   * Accepts a uniform scale factor (number) or a non-uniform scale as Point/{x,y}/[x,y].
+   * @param {number|Point|{x:number,y:number}|[number,number]} s - scale factor or scale vector
+   * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null] - origin for scaling; defaults to (0,0)
+   * @returns {Polygon}
+   */
+  scale(s, origin = null) {
+    // Determine scale factors
+    let sx, sy;
+    if (typeof s === 'number') {
+      sx = sy = s;
+    } else if (s instanceof Point) {
+      sx = s.x; sy = s.y;
+    } else if (Array.isArray(s) && s.length >= 2) {
+      sx = s[0]; sy = s[1];
+    } else if (s && typeof s === 'object' && 'x' in s && 'y' in s) {
+      sx = s.x; sy = s.y;
+    } else {
+      throw new Error('scale(): invalid scale parameter');
+    }
+
+    origin = origin == null ? new Point() : (origin instanceof Point ? origin : new Point(origin));
+
+    // Apply scaling using Point.scale (keeps behavior consistent with Point API)
+    for (let r = 0; r < this.pts.length; r++) {
+      const ring = this.pts[r];
+      for (let i = 0; i < ring.length; i++) {
+        ring[i] = ring[i].scale(s, origin);
+      }
+    }
+
+    // update bbox after scaling
+    this.calcBBox();
+    return this;
+  }
+
+  /**
    * Compute and store bounding box covering all rings
    * Sets `this.bbox` to an object: { minX, minY, maxX, maxY, width, height }
    * Returns the bbox object (or null if polygon has no points)
@@ -555,6 +592,8 @@ export default class Polygon {
       width: maxX - minX,
       height: maxY - minY
     };
+    // Add midpoint (center) of bbox for convenience
+    bbox.midPoint = new Point((minX + maxX) / 2, (minY + maxY) / 2);
 
     this.bbox = bbox;
     return bbox;
