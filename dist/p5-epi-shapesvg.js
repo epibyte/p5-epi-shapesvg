@@ -300,8 +300,12 @@ var EpiShapeSvg = (function (exports) {
     constructor(ptArr = [], closePath = false) {
       // can be also multiple polygons
       this.pts = [];
+      // Cached bounding box: { minX, minY, maxX, maxY, width, height } or null
+      this.bbox = null;
       if (ptArr && ptArr.length) {
         this.addPtsArr(ptArr, closePath);
+        // compute bbox after initial construction
+        this.calcBBox();
       }
     }
 
@@ -315,6 +319,8 @@ var EpiShapeSvg = (function (exports) {
         // Deep copy each Point in the ring
         newPoly.pts.push(ring.map(pt => pt.copy()));
       }
+      // Update bbox for the copy
+      newPoly.calcBBox();
       return newPoly;
     }
 
@@ -329,6 +335,8 @@ var EpiShapeSvg = (function (exports) {
           ring.push(ring[0]);
         }
       }
+      // Update bbox when closing path
+      this.calcBBox();
       return this;
     }
 
@@ -340,6 +348,8 @@ var EpiShapeSvg = (function (exports) {
     addPoint(pt) {
       pt = pt instanceof Point ? pt : new Point(pt);
       this.pts[this.pts.length-1].push(pt);
+      // update bbox
+      this.calcBBox();
       return this;
     }
 
@@ -360,6 +370,8 @@ var EpiShapeSvg = (function (exports) {
       if (closePath && pts.length) {
         this.closeLastPath();
       }
+      // update bbox after adding points
+      this.calcBBox();
       return this;
     }
 
@@ -702,6 +714,8 @@ var EpiShapeSvg = (function (exports) {
       }
     
       this.pts = merged;
+      // Update bbox after optimize
+      this.calcBBox();
       return this;
     }
 
@@ -748,6 +762,92 @@ var EpiShapeSvg = (function (exports) {
       }
 
       return false;
+    }
+
+    /**
+     * Translate all points of the polygon by a vector.
+     * @param {Point|{x:number,y:number}|[number,number]} vec - translation vector
+     * @returns {Polygon}
+     */
+    translate(vec) {
+      vec = vec instanceof Point ? vec : new Point(vec);
+      for (const ring of this.pts) {
+        for (let i = 0; i < ring.length; i++) {
+          const p = ring[i];
+          p.set(p.x + vec.x, p.y + vec.y);
+        }
+      }
+      // update bbox after translation
+      this.calcBBox();
+      return this;
+    }
+
+    /**
+     * Rotate all points of the polygon by angle (radians) around origin.
+     * @param {number} angle - angle in radians
+     * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null] - rotation origin; defaults to (0,0)
+     * @returns {Polygon}
+     */
+    rotate(angle, origin = null) {
+      origin = origin == null ? new Point() : (origin instanceof Point ? origin : new Point(origin));
+      for (let r = 0; r < this.pts.length; r++) {
+        const ring = this.pts[r];
+        for (let i = 0; i < ring.length; i++) {
+          ring[i] = ring[i].rotate(angle, origin);
+        }
+      }
+      // update bbox after rotation
+      this.calcBBox();
+      return this;
+    }
+
+    /**
+     * Compute and store bounding box covering all rings
+     * Sets `this.bbox` to an object: { minX, minY, maxX, maxY, width, height }
+     * Returns the bbox object (or null if polygon has no points)
+     * @returns {{minX:number,minY:number,maxX:number,maxY:number,width:number,height:number}|null}
+     */
+    createBBox() {
+      if (!Array.isArray(this.pts) || this.pts.length === 0) {
+        this.bbox = null;
+        return null;
+      }
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let found = false;
+      for (const ring of this.pts) {
+        if (!Array.isArray(ring)) continue;
+        for (const p of ring) {
+          if (!p) continue;
+          found = true;
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y > maxY) maxY = p.y;
+        }
+      }
+
+      if (!found) {
+        this.bbox = null;
+        return null;
+      }
+
+      const bbox = {
+        minX,
+        minY,
+        maxX,
+        maxY,
+        width: maxX - minX,
+        height: maxY - minY
+      };
+
+      this.bbox = bbox;
+      return bbox;
+    }
+
+    /** Alias for backward compatibility */
+    calcBBox() {
+      return this.createBBox();
     }
     
     /**
@@ -821,6 +921,7 @@ var EpiShapeSvg = (function (exports) {
         result.addPtsArr([start, end]);
       }
       result.optimize();
+      result.calcBBox();
       return result;
     }
 
@@ -851,7 +952,8 @@ var EpiShapeSvg = (function (exports) {
           }
         }
       }
-      mergedPoly.optimize(); // Merge rings if last point of one equals first point of next  
+      mergedPoly.optimize(); // Merge rings if last point of one equals first point of next
+      mergedPoly.calcBBox();
       return mergedPoly;
     }
 
@@ -865,6 +967,8 @@ var EpiShapeSvg = (function (exports) {
       if (optimize) {
         this.optimize(); // Merge rings if last point of one equals first point of next
       }
+      // Update bbox after merge
+      this.calcBBox();
       return this;
     }
     
