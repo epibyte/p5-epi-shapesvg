@@ -332,7 +332,7 @@ runner.describe('Polygon', () => {
     const poly = new Polygon([
       new Point(1,2), new Point(3,4), new Point(-1,5)
     ], false);
-    const bbox = poly.createBBox();
+    const bbox = poly.calcBBox();
     runner.assertAlmostEqual(bbox.minX, -1, 1e-10);
     runner.assertAlmostEqual(bbox.minY, 2, 1e-10);
     runner.assertAlmostEqual(bbox.maxX, 3, 1e-10);

@@ -18,6 +18,8 @@ export default class Polygon {
     this.bbox = null;
     if (ptArr && ptArr.length) {
       this.addPtsArr(ptArr, closePath);
+      // compute bbox after initial construction
+      this.calcBBox();
     }
   }
 
@@ -56,6 +58,8 @@ export default class Polygon {
   addPoint(pt) {
     pt = pt instanceof Point ? pt : new Point(pt);
     this.pts[this.pts.length-1].push(pt);
+    // update bbox
+    this.calcBBox();
     return this;
   }
 
@@ -76,6 +80,8 @@ export default class Polygon {
     if (closePath && pts.length) {
       this.closeLastPath();
     }
+    // update bbox after adding points
+    this.calcBBox();
     return this;
   }
 
@@ -496,8 +502,8 @@ export default class Polygon {
         ring[i] = ring[i].rotate(angle, origin);
       }
     }
-    // invalidate bbox cache
-    this.bbox = null;
+    // update bbox after rotation
+    this.calcBBox();
     return this;
   }
 
@@ -543,6 +549,11 @@ export default class Polygon {
 
     this.bbox = bbox;
     return bbox;
+  }
+
+  /** Alias for backward compatibility */
+  calcBBox() {
+    return this.createBBox();
   }
   
   /**
