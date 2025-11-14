@@ -704,6 +704,51 @@ var EpiShapeSvg = (function (exports) {
       this.pts = merged;
       return this;
     }
+
+    /**
+     * Compute signed area of a ring (array of Points). Positive for CCW.
+     * @param {Point[]} ring
+     * @returns {number}
+     */
+    signedRingArea(ring) {
+      if (!ring || ring.length < 3) return 0;
+      let area = 0;
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i];
+        const b = ring[(i + 1) % ring.length];
+        area += a.x * b.y - b.x * a.y;
+      }
+      return area / 2;
+    }
+
+    /**
+     * Returns true if this polygon and `other` have a real area overlap.
+     * Touching at edges or vertices does NOT count as overlap.
+     * @param {Polygon} other
+     * @param {number} [epsilon=1e-9] - area tolerance (areas <= epsilon treated as zero)
+     * @returns {boolean}
+     */
+    isOverlapping(other, epsilon = 1e-9) {
+      if (!other || !(other instanceof Polygon)) return false;
+
+      // Compute intersection regions from both sides (this clipped to other, and other clipped to this)
+      const interA = this.clipTo(other, true);
+      const interB = other.clipTo(this, true);
+
+      let totalArea = 0;
+      for (const ring of interA.pts) {
+        if (!ring || ring.length < 3) continue;
+        totalArea += Math.abs(this.signedRingArea(ring));
+        if (totalArea > epsilon) return true;
+      }
+      for (const ring of interB.pts) {
+        if (!ring || ring.length < 3) continue;
+        totalArea += Math.abs(this.signedRingArea(ring));
+        if (totalArea > epsilon) return true;
+      }
+
+      return false;
+    }
     
     /**
      * Clips a line segment against all rings of the polygon (multi-ring aware, XOR logic).
