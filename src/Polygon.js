@@ -463,6 +463,39 @@ export default class Polygon {
 
     return false;
   }
+
+  /**
+   * Translate all points of the polygon by a vector.
+   * @param {Point|{x:number,y:number}|[number,number]} vec - translation vector
+   * @returns {Polygon}
+   */
+  translate(vec) {
+    vec = vec instanceof Point ? vec : new Point(vec);
+    for (const ring of this.pts) {
+      for (let i = 0; i < ring.length; i++) {
+        const p = ring[i];
+        p.set(p.x + vec.x, p.y + vec.y);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Rotate all points of the polygon by angle (radians) around origin.
+   * @param {number} angle - angle in radians
+   * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null] - rotation origin; defaults to (0,0)
+   * @returns {Polygon}
+   */
+  rotate(angle, origin = null) {
+    origin = origin == null ? new Point() : (origin instanceof Point ? origin : new Point(origin));
+    for (let r = 0; r < this.pts.length; r++) {
+      const ring = this.pts[r];
+      for (let i = 0; i < ring.length; i++) {
+        ring[i] = ring[i].rotate(angle, origin);
+      }
+    }
+    return this;
+  }
   
   /**
    * Clips a line segment against all rings of the polygon (multi-ring aware, XOR logic).

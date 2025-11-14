@@ -305,6 +305,29 @@ runner.describe('Polygon', () => {
     runner.assertFalse(a.isOverlapping(b));
   });
 
+  runner.test('translate shifts polygon points', () => {
+    const poly = new Polygon([
+      new Point(0,0), new Point(2,0), new Point(2,2)
+    ], false);
+    poly.translate({x:3, y:4});
+    runner.assertAlmostEqual(poly.pts[0][0].x, 3, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][0].y, 4, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][1].x, 5, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][2].y, 6, 1e-10);
+  });
+
+  runner.test('rotate rotates polygon around origin', () => {
+    // triangle at (1,0),(2,0),(1,1) rotate 90deg -> (-0,1), (0,2), (-1,1)
+    const poly = new Polygon([
+      new Point(1,0), new Point(2,0), new Point(1,1)
+    ], false);
+    poly.rotate(Math.PI/2, new Point(0,0));
+    runner.assertAlmostEqual(poly.pts[0][0].x, 0, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][0].y, 1, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][1].x, 0, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][1].y, 2, 1e-10);
+  });
+
 });
 
 export default runner;

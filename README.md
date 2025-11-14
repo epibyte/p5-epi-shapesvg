@@ -46,6 +46,8 @@ Represents one or more polylines (rings), which can be open or closed. Used for 
 - `toSVG(prec)` — get SVG polyline string representation
 - `toString(prec)` — get string representation
 - `drawShape()` — draw using p5.js (requires p5.js in scope)
+- `translate(vec)` — translate the entire polygon by `vec` (`Point`, `{x,y}` or `[x,y]`)
+- `rotate(angle, origin)` — rotate the entire polygon by `angle` (radians) around `origin` (defaults to `(0,0)`)
 
 **Static Methods:**
 - `Polygon.createNEdges(nEdges, radius, center, rotation)` — create a regular polygon. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
