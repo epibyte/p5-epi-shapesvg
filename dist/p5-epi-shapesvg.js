@@ -97,11 +97,32 @@ var EpiShapeSvg = (function (exports) {
 
     /**
      * Returns a new point scaled by a factor.
-     * @param {number} scl
+     * Supports uniform scale (number) or non-uniform scale as Point/{x,y}/[x,y].
+     * Optional `origin` specifies the point to scale around (default (0,0)).
+     * @param {number|Point|{x:number,y:number}|[number,number]} scl
+     * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null]
      * @returns {Point}
      */
-    scale(scl) {
-      return new Point(this.x * scl, this.y * scl);
+    scale(scl, origin = null) {
+      let sx, sy;
+      if (typeof scl === 'number') {
+        sx = sy = scl;
+      } else if (scl instanceof Point) {
+        sx = scl.x; sy = scl.y;
+      } else if (Array.isArray(scl) && scl.length >= 2) {
+        sx = scl[0]; sy = scl[1];
+      } else if (scl && typeof scl === 'object' && 'x' in scl && 'y' in scl) {
+        sx = scl.x; sy = scl.y;
+      } else {
+        throw new Error('Point.scale(): invalid scale parameter');
+      }
+
+      if (origin == null) origin = new Point();
+      else origin = origin instanceof Point ? origin : new Point(origin);
+
+      const nx = origin.x + (this.x - origin.x) * sx;
+      const ny = origin.y + (this.y - origin.y) * sy;
+      return new Point(nx, ny);
     }
 
     /**
@@ -332,7 +353,8 @@ var EpiShapeSvg = (function (exports) {
       if (this.pts.length) {
         const ring = this.pts[this.pts.length - 1];
         if (ring.length > 1 && !ring[ring.length - 1].equals(ring[0])) {
-          ring.push(ring[0]);
+          // push a copy of the first point so the last element is not the same object
+          ring.push(ring[0].copy());
         }
       }
       // Update bbox when closing path
@@ -802,6 +824,39 @@ var EpiShapeSvg = (function (exports) {
     }
 
     /**
+     * Scale all points of the polygon around an origin.
+     * Accepts a uniform scale factor (number) or a non-uniform scale as Point/{x,y}/[x,y].
+     * @param {number|Point|{x:number,y:number}|[number,number]} s - scale factor or scale vector
+     * @param {Point|{x:number,y:number}|[number,number]|null} [origin=null] - origin for scaling; defaults to (0,0)
+     * @returns {Polygon}
+     */
+    scale(s, origin = null) {
+      if (typeof s === 'number') ; else if (s instanceof Point) {
+        s.x; s.y;
+      } else if (Array.isArray(s) && s.length >= 2) {
+        s[0]; s[1];
+      } else if (s && typeof s === 'object' && 'x' in s && 'y' in s) {
+        s.x; s.y;
+      } else {
+        throw new Error('scale(): invalid scale parameter');
+      }
+
+      origin = origin == null ? new Point() : (origin instanceof Point ? origin : new Point(origin));
+
+      // Apply scaling using Point.scale (keeps behavior consistent with Point API)
+      for (let r = 0; r < this.pts.length; r++) {
+        const ring = this.pts[r];
+        for (let i = 0; i < ring.length; i++) {
+          ring[i] = ring[i].scale(s, origin);
+        }
+      }
+
+      // update bbox after scaling
+      this.calcBBox();
+      return this;
+    }
+
+    /**
      * Compute and store bounding box covering all rings
      * Sets `this.bbox` to an object: { minX, minY, maxX, maxY, width, height }
      * Returns the bbox object (or null if polygon has no points)
@@ -840,6 +895,8 @@ var EpiShapeSvg = (function (exports) {
         width: maxX - minX,
         height: maxY - minY
       };
+      // Add midpoint (center) of bbox for convenience
+      bbox.midPoint = new Point((minX + maxX) / 2, (minY + maxY) / 2);
 
       this.bbox = bbox;
       return bbox;
