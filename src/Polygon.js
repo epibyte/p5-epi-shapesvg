@@ -46,7 +46,8 @@ export default class Polygon {
     if (this.pts.length) {
       const ring = this.pts[this.pts.length - 1];
       if (ring.length > 1 && !ring[ring.length - 1].equals(ring[0])) {
-        ring.push(ring[0]);
+        // push a copy of the first point so the last element is not the same object
+        ring.push(ring[0].copy());
       }
     }
     // Update bbox when closing path

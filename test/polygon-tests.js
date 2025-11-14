@@ -316,6 +316,21 @@ runner.describe('Polygon', () => {
     runner.assertAlmostEqual(poly.pts[0][2].y, 6, 1e-10);
   });
 
+  runner.test('translate on closed ring does not double-apply', () => {
+    const pts = [new Point(0,0), new Point(2,0), new Point(2,2)];
+    const poly = new Polygon(pts, true); // closed ring: last element is a copy of first
+    const ring = poly.pts[0];
+    // ensure ring was closed by value but not the same reference
+    runner.assertFalse(ring[0] === ring[ring.length - 1]);
+
+    poly.translate([3,4]);
+    // both first and last should have been translated exactly once and have matching coords
+    runner.assertAlmostEqual(ring[0].x, 3, 1e-10);
+    runner.assertAlmostEqual(ring[0].y, 4, 1e-10);
+    runner.assertAlmostEqual(ring[ring.length - 1].x, 3, 1e-10);
+    runner.assertAlmostEqual(ring[ring.length - 1].y, 4, 1e-10);
+  });
+
   runner.test('rotate rotates polygon around origin', () => {
     // triangle at (1,0),(2,0),(1,1) rotate 90deg -> (-0,1), (0,2), (-1,1)
     const poly = new Polygon([
