@@ -84,7 +84,7 @@ import Polygon from './src/Polygon.js';
 
 In OpenProcessing, go to **Sketch > Libraries > Add .js File** and paste URL:
 
-`https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js`
+`https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.19/dist/p5-epi-shapesvg.js`
 
 Then use the classes from the global object:
 
