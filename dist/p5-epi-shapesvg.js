@@ -141,6 +141,47 @@ var EpiShapeSvg = (function (exports) {
 
       return new Point(rotatedX, rotatedY);
     }
+    
+    /**
+     * Vector-like helpers for convenience in geometric algorithms
+     */
+    add(pt) {
+      return new Point(this.x + pt.x, this.y + pt.y);
+    }
+
+    sub(pt) {
+      return new Point(this.x - pt.x, this.y - pt.y);
+    }
+
+    mul(s) {
+      return new Point(this.x * s, this.y * s);
+    }
+
+    div(s) {
+      return new Point(this.x / s, this.y / s);
+    }
+
+    length() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    lengthSq() {
+      return this.x * this.x + this.y * this.y;
+    }
+
+    normalize() {
+      const l = this.length();
+      if (l === 0) return new Point(0, 0);
+      return new Point(this.x / l, this.y / l);
+    }
+
+    dot(pt) {
+      return this.x * pt.x + this.y * pt.y;
+    }
+
+    perp() {
+      return new Point(-this.y, this.x);
+    }
 
     // Check if a point is (just) in area
     /**
@@ -487,6 +528,38 @@ var EpiShapeSvg = (function (exports) {
     }
 
     /**
+     * Creates a rectangle positioned by the top-left corner `pos` with dimensions `dim` and optional
+     * rotation applied about the rectangle center. Both `pos` and `dim` accept `Point`, `{x,y}` or `[x,y]`.
+     * @param {Point|{x:number,y:number}|[number,number]} pos - top-left position
+     * @param {Point|{x:number,y:number}|[number,number]} dim - width (x) and height (y)
+     * @param {number} [rotation=0] - rotation in radians (applied around rectangle center)
+     * @returns {Polygon}
+     */
+    static createRectangle(pos, dim, rotation = 0) {
+      pos = pos instanceof Point ? pos : new Point(pos);
+      dim = dim instanceof Point ? dim : new Point(dim);
+
+      // Compute center for rotation
+      const center = new Point(pos.x + dim.x / 2, pos.y + dim.y / 2);
+
+      // Define corners starting from top-left, clockwise
+      const pts = [
+        new Point(pos.x, pos.y),
+        new Point(pos.x + dim.x, pos.y),
+        new Point(pos.x + dim.x, pos.y + dim.y),
+        new Point(pos.x, pos.y + dim.y)
+      ];
+
+      if (rotation) {
+        for (let i = 0; i < pts.length; i++) {
+          pts[i] = pts[i].rotate(rotation, center);
+        }
+      }
+
+      return new Polygon(pts, true);
+    }
+
+    /**
      * Returns the total length of all rings in the polygon.
      * @returns {number}
      */
@@ -512,6 +585,212 @@ var EpiShapeSvg = (function (exports) {
     toString(prec = 1) {
       return `Polygon(${this.pts.map(ptArr => ptArr.map(pt => pt.toString(prec)).join(", ")).join(" | ")})`;
     }
+
+    /**
+     * Inserts points along each polygon ring so that no segment is longer than `maxLen`.
+     * Mutates the polygon in-place and returns `this`.
+     * @param {number} maxLen - maximum allowed segment length (must be > 0)
+     * @returns {Polygon}
+     */
+    densify(maxLen) {
+      if (typeof maxLen !== 'number' || !(maxLen > 0)) {
+        throw new Error('Polygon.densify(maxLen): maxLen must be a positive number');
+      }
+
+      const newPts = [];
+      for (const ring of this.pts) {
+        if (!ring || ring.length === 0) {
+          newPts.push([]);
+          continue;
+        }
+
+        if (ring.length < 2) {
+          // nothing to subdivide
+          newPts.push(ring.map(p => p.copy()));
+          continue;
+        }
+
+        const closed = ring.length > 1 && ring[0].equals(ring[ring.length - 1]);
+        const n = closed ? ring.length - 1 : ring.length - 1; // iterate pairs up to last
+
+        const newRing = [];
+        for (let i = 0; i < n; i++) {
+          const a = ring[i];
+          const b = ring[(i + 1) % ring.length];
+          newRing.push(a.copy());
+
+          const segLen = a.distanceTo(b);
+          if (segLen > maxLen) {
+            const numExtra = Math.ceil(segLen / maxLen) - 1;
+            for (let k = 1; k <= numExtra; k++) {
+              const t = k / (numExtra + 1);
+              newRing.push(a.lerp(b, t));
+            }
+          }
+        }
+
+        // Add last point for open rings
+        if (!closed) {
+          newRing.push(ring[ring.length - 1].copy());
+        } else {
+          // close ring by repeating first point
+          newRing.push(newRing[0].copy());
+        }
+
+        newPts.push(newRing);
+      }
+
+      this.pts = newPts;
+      this.calcBBox();
+      return this;
+    }
+
+    /**
+     * Removes points in each ring that are closer together than `minLen`.
+     * Ensures start and end points are preserved for open rings, and preserves closure for closed rings.
+     * Mutates the polygon in-place and returns `this`.
+     * @param {number} minLen - minimum allowed segment length (must be >= 0)
+     * @returns {Polygon}
+     */
+    sparsify(minLen) {
+      if (typeof minLen !== 'number' || minLen < 0) {
+        throw new Error('Polygon.sparsify(minLen): minLen must be a non-negative number');
+      }
+
+      const newPts = [];
+
+      for (const ring of this.pts) {
+        if (!ring || ring.length === 0) {
+          newPts.push([]);
+          continue;
+        }
+
+        if (ring.length < 2) {
+          newPts.push(ring.map(p => p.copy()));
+          continue;
+        }
+
+        const closed = ring.length > 1 && ring[0].equals(ring[ring.length - 1]);
+
+        if (closed) {
+          // Work on base ring without duplicated closing point
+          const base = ring.slice(0, ring.length - 1);
+          const kept = [];
+          kept.push(base[0].copy());
+          let prev = base[0];
+          for (let i = 1; i < base.length; i++) {
+            const curr = base[i];
+            if (prev.distanceTo(curr) >= minLen) {
+              kept.push(curr.copy());
+              prev = curr;
+            }
+          }
+
+          // If too aggressive removal left <2 points, fall back to original base
+          if (kept.length < 2) {
+            const fallback = base.map(p => p.copy());
+            if (fallback.length === 1) {
+              // duplicate a second point halfway to next original point
+              const next = base[1] || base[0];
+              fallback.push(new Point((base[0].x + next.x) / 2, (base[0].y + next.y) / 2));
+            }
+            fallback.push(fallback[0].copy());
+            newPts.push(fallback);
+            continue;
+          }
+
+          // close ring
+          kept.push(kept[0].copy());
+          newPts.push(kept);
+        } else {
+          // open ring: always keep first and last
+          const kept = [];
+          kept.push(ring[0].copy());
+          let prev = ring[0];
+          for (let i = 1; i < ring.length - 1; i++) {
+            const curr = ring[i];
+            if (prev.distanceTo(curr) >= minLen) {
+              kept.push(curr.copy());
+              prev = curr;
+            }
+          }
+          kept.push(ring[ring.length - 1].copy());
+          newPts.push(kept);
+        }
+      }
+
+      this.pts = newPts;
+      this.calcBBox();
+      return this;
+    }
+
+    /**
+     * Slightly randomizes points in each ring by up to `deviation` units.
+     * Mutates the polygon in-place and returns `this`.
+     * @param {number} deviation - maximum deviation distance (>= 0)
+     * @param {{preserveEndpoints?:boolean,seed?:number}} [opts={}] - options
+     *    - preserveEndpoints: when true (default) keeps first and last points of open rings unchanged
+     *    - seed: optional integer seed for deterministic jitter
+     * @returns {Polygon}
+     */
+    jitter(deviation, opts = {}) {
+      if (typeof deviation !== 'number' || deviation < 0) {
+        throw new Error('Polygon.jitter(deviation): deviation must be a non-negative number');
+      }
+
+      const { preserveEndpoints = true, seed = null } = opts;
+
+      // deterministic PRNG when seed provided (LCG)
+      let rnd = Math.random;
+      if (typeof seed === 'number') {
+        let s = seed >>> 0;
+        rnd = function() {
+          s = (s * 1664525 + 1013904223) >>> 0;
+          return s / 0x100000000;
+        };
+      }
+
+      const newPts = [];
+      for (const ring of this.pts) {
+        if (!ring || ring.length === 0) {
+          newPts.push([]);
+          continue;
+        }
+
+        const closed = ring.length > 1 && ring[0].equals(ring[ring.length - 1]);
+        const n = ring.length;
+        const newRing = [];
+
+        for (let i = 0; i < n; i++) {
+          const orig = ring[i];
+          const isFirst = i === 0;
+          const isLast = i === n - 1;
+
+          // preserve endpoints for open rings when requested
+          const preserve = preserveEndpoints && !closed && (isFirst || isLast);
+
+          let pt = orig.copy();
+          if (!preserve && deviation > 0) {
+            const theta = rnd() * Math.PI * 2;
+            const r = rnd() * deviation;
+            pt = new Point(pt.x + Math.cos(theta) * r, pt.y + Math.sin(theta) * r);
+          }
+          newRing.push(pt);
+        }
+
+        if (closed && newRing.length > 0) {
+          // ensure closure by copying first to last
+          newRing[newRing.length - 1] = newRing[0].copy();
+        }
+
+        newPts.push(newRing);
+      }
+
+      this.pts = newPts;
+      this.calcBBox();
+      return this;
+    }
+    
 
     /**
      * Returns an SVG polyline string for all rings.
@@ -1059,6 +1338,160 @@ var EpiShapeSvg = (function (exports) {
       }
       return union.optimize();
     }
+
+
+    /**
+     * Computes the straight skeleton of this polygon and returns it as a `Polygon` consisting
+     * of 2-point rings where each ring represents one skeleton segment.
+     *
+     * WARNING: This method is experimental and not robust. It is **highly likely to be removed**
+     * in a future release. Use at your own risk.
+     *
+     * @deprecated Experimental — may be removed in future releases.
+     * @returns {Polygon}
+     */
+    getSkeleton() {
+      // Runtime warning so callers are aware this API is unstable
+      console.warn('Polygon.getSkeleton(): experimental and not robust — may be removed in a future release. Use at your own risk.');
+      const skeletonPoly = new Polygon();
+      if (!Array.isArray(this.pts) || this.pts.length === 0) return skeletonPoly;
+
+      // Helper functions that use episvg Point objects
+      const EPS = 1e-9;
+
+      function computeBisector(vertex) {
+        const a = vertex.prevVertex.position;
+        const b = vertex.position;
+        const c = vertex.nextVertex.position;
+
+        const prevEdgeNorm = a.sub(b).normalize();
+        const nextEdgeNorm = c.sub(b).normalize();
+
+        const sum = prevEdgeNorm.add(nextEdgeNorm);
+        if (sum.length() < EPS) {
+          // nearly straight or reflex corner; choose a perpendicular to prevEdge
+          return prevEdgeNorm.perp().normalize();
+        }
+        return sum.normalize();
+      }
+
+      function intersectRay(as, ad, bs, bd) {
+        // Solve as + ad*u = bs + bd*v  for u,v >= 0
+        const A11 = ad.x, A12 = -bd.x, A21 = ad.y, A22 = -bd.y;
+        const det = A11 * A22 - A12 * A21;
+        if (Math.abs(det) < EPS) return undefined;
+        const rhs1 = bs.x - as.x, rhs2 = bs.y - as.y;
+        const u = (rhs1 * A22 - rhs2 * A12) / det;
+        const v = (A11 * rhs2 - A21 * rhs1) / det;
+        if (u < 0 || v < 0) return undefined;
+        return new Point(as.x + ad.x * u, as.y + ad.y * u);
+      }
+
+      function distToSegment(p, v, w) {
+        const l2 = v.distanceSqTo(w);
+        if (l2 === 0) return p.distanceTo(v);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const proj = new Point(v.x + (w.x - v.x) * t, v.y + (w.y - v.y) * t);
+        return p.distanceTo(proj);
+      }
+
+      function findIntersection(vertex) {
+        const prevISectVertex = vertex.prevVertex;
+        const nextISectVertex = vertex.nextVertex;
+
+        let intersectionPrev;
+        let intersectionNext;
+
+        const ipPrevPt = intersectRay(vertex.position, vertex.bisector, prevISectVertex.position, prevISectVertex.bisector);
+        if (ipPrevPt !== undefined) {
+          const intersectionPrevDistToEdge = distToSegment(ipPrevPt, vertex.position, vertex.nextVertex.position);
+          intersectionPrev = { position: ipPrevPt, origins: [prevISectVertex, vertex], distanceToEdge: intersectionPrevDistToEdge };
+        }
+
+        const ipNextPt = intersectRay(vertex.position, vertex.bisector, nextISectVertex.position, nextISectVertex.bisector);
+        if (ipNextPt !== undefined) {
+          const intersectionNextDistToEdge = distToSegment(ipNextPt, vertex.position, vertex.nextVertex.position);
+          intersectionNext = { position: ipNextPt, origins: [vertex, nextISectVertex], distanceToEdge: intersectionNextDistToEdge };
+        }
+
+        if (intersectionPrev === undefined) return intersectionNext;
+        if (intersectionNext === undefined) return intersectionPrev;
+        return (intersectionPrev.distanceToEdge < intersectionNext.distanceToEdge) ? intersectionPrev : intersectionNext;
+      }
+
+      for (const ring of this.pts) {
+        if (!ring || ring.length < 3) continue;
+
+        // Build vertices with linked-list style references
+        const verts = ring.map(pt => ({ position: pt.copy(), active: true, bisector: undefined, prevVertex: undefined, nextVertex: undefined }));
+        for (let i = 0; i < verts.length; i++) {
+          const v = verts[i];
+          v.prevVertex = verts[(i - 1 + verts.length) % verts.length];
+          v.nextVertex = verts[(i + 1) % verts.length];
+        }
+
+        verts.forEach(v => v.bisector = computeBisector(v));
+
+        // initialize queue of intersections
+        let queue = verts.map(v => findIntersection(v)).filter(Boolean);
+        queue.sort((a, b) => a.distanceToEdge - b.distanceToEdge);
+
+        const skeletonSegments = [];
+
+        while (queue.length > 0) {
+          const intersection = queue.shift();
+          const { origins } = intersection;
+          const va = origins[0];
+          const vb = origins[1];
+
+          if (va.active === false && vb.active === false) continue;
+
+          // Edge event
+          if (va.prevVertex === vb.nextVertex) {
+            skeletonSegments.push([va.position.copy(), intersection.position.copy()]);
+            skeletonSegments.push([vb.position.copy(), intersection.position.copy()]);
+            skeletonSegments.push([va.prevVertex.position.copy(), intersection.position.copy()]);
+
+            va.active = false;
+            vb.active = false;
+            va.prevVertex.active = false;
+            continue;
+          }
+
+          // Normal event
+          skeletonSegments.push([va.position.copy(), intersection.position.copy()]);
+          skeletonSegments.push([vb.position.copy(), intersection.position.copy()]);
+
+          va.active = false;
+          vb.active = false;
+
+          // create and link new vertex
+          const newVertex = { position: intersection.position.copy(), active: true, bisector: undefined, prevVertex: va.prevVertex, nextVertex: vb.nextVertex };
+          newVertex.prevVertex.nextVertex = newVertex;
+          newVertex.nextVertex.prevVertex = newVertex;
+          newVertex.bisector = computeBisector(newVertex);
+
+          // compute potential new intersection
+          const newI = findIntersection(newVertex);
+          if (newI !== undefined) {
+            queue.push(newI);
+            queue.sort((a, b) => a.distanceToEdge - b.distanceToEdge);
+          }
+        }
+
+        // add skeleton segments as 2-point rings to skeletonPoly
+        for (const [a, b] of skeletonSegments) {
+          skeletonPoly.addPtsArr([a.copy(), b.copy()]);
+        }
+      }
+
+      //skeletonPoly.optimize();
+      skeletonPoly.calcBBox();
+      return skeletonPoly;
+    }
+    // end getSkeleton()
+    
   }
 
   exports.Line = Line;
