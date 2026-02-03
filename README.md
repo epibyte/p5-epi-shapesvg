@@ -103,7 +103,7 @@ In the p5.js Web Editor, add this line at the top of your sketch:
 
 ```js
 const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.20/dist/p5-epi-shapesvg.js';
+script.src = 'https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.21/dist/p5-epi-shapesvg.js';
 document.head.appendChild(script);
 
 // Use after the script loads
