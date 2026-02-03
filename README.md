@@ -43,17 +43,22 @@ Represents one or more polylines (rings), which can be open or closed. Used for 
 - `isPointIn(pt)` — test if a point is inside the polygon
 - `isOverlapping(other, epsilon)` — test if this polygon has a real area overlap with another (edge/vertex touching does NOT count as overlap)
 - `length()` — compute total length of all rings
+- `densify(maxLen)` — insert points so no segment is longer than `maxLen`; mutates the polygon and returns `this`.
+- `sparsify(minLen)` — remove points closer than `minLen`; preserves endpoints and closure rules; mutates the polygon and returns `this`.
+- `jitter(deviation, opts)` — randomly perturb points up to `deviation` (options: `{preserveEndpoints, seed}`); mutates the polygon and returns `this`.
 - `toSVG(prec)` — get SVG polyline string representation
 - `toString(prec)` — get string representation
 - `drawShape()` — draw using p5.js (requires p5.js in scope)
- - `translate(vec)` — translate the entire polygon by `vec` (`Point`, `{x,y}` or `[x,y]`)
- - `rotate(angle, origin)` — rotate the entire polygon by `angle` (radians) around `origin` (defaults to `(0,0)`)
- - `calcBBox()` — compute and cache polygon bounding box in `polygon.bbox` as `{minX,minY,maxX,maxY,width,height}`; called automatically when polygon is created or mutated
+- `getSkeleton()` — compute the straight skeleton (returned as a `Polygon` of 2-point rings). **Experimental and not robust; highly likely to be removed in a future release.** Emits a runtime `console.warn()` when called. Use at your own risk.
+- `translate(vec)` — translate the entire polygon by `vec` (`Point`, `{x,y}` or `[x,y]`)
+- `rotate(angle, origin)` — rotate the entire polygon by `angle` (radians) around `origin` (defaults to `(0,0)`)
+- `calcBBox()` — compute and cache polygon bounding box in `polygon.bbox` as `{minX,minY,maxX,maxY,width,height}`; called automatically when polygon is created or mutated
 
 **Static Methods:**
 - `Polygon.createNEdges(nEdges, radius, center, rotation)` — create a regular polygon. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
 - `Polygon.createStar(nEdges, radiusOuter, radiusInner, center, rotation)` — create a star shape. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
 - `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment. Both `center` and `dim` can be a `Point`, `{x, y}` object, or `[x, y]` array. Returns an open path by default.
+- `Polygon.createRectangle(pos, dim, rotation)` — create a rectangle positioned by the **top-left** corner `pos` with dimensions `dim` (width x, height y). `rotation` is in radians and is applied about the rectangle center.
 - `Polygon.outerHull(...polys)` — returns the union/outer hull of multiple polygons
 
 ### Polygon.clipLine(p1, p2, inside = true)
@@ -84,7 +89,7 @@ import Polygon from './src/Polygon.js';
 
 In OpenProcessing, go to **Sketch > Libraries > Add .js File** and paste URL:
 
-`https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.19/dist/p5-epi-shapesvg.js`
+`https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.20/dist/p5-epi-shapesvg.js`
 
 Then use the classes from the global object:
 
@@ -98,7 +103,7 @@ In the p5.js Web Editor, add this line at the top of your sketch:
 
 ```js
 const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.7/dist/p5-epi-shapesvg.js';
+script.src = 'https://cdn.jsdelivr.net/gh/epibyte/p5-epi-shapesvg@v0.0.20/dist/p5-epi-shapesvg.js';
 document.head.appendChild(script);
 
 // Use after the script loads
@@ -128,6 +133,36 @@ const hashedLines = multipleLinesPoly.clipTo(unionTriangles);
 console.log('Clipped lines as SVG:', hashedLines.toSVG());
 ```
 
+### New API examples ✅
+
+```js
+// createRectangle: top-left pos (0,0), width 100, height 50
+const rect = Polygon.createRectangle(new Point(0, 0), new Point(100, 50));
+console.log('rect corners:', rect.toString());
+
+// rotated rectangle (30 degrees) - rotation applied about center
+const rotated = Polygon.createRectangle([10, 20], [40, 20], Math.PI / 6);
+console.log('rotated rect svg:', rotated.toSVG());
+
+// densify: subdivide long segments so no segment longer than 20
+const line = new Polygon([[0, 0], [100, 0]], false);
+line.densify(20);
+console.log('densified points:', line.pts[0].length);
+
+// sparsify: remove points closer than 2 while preserving endpoints
+const noisy = new Polygon([[0, 0], [1, 0], [2, 0], [10, 0]], false);
+noisy.sparsify(2);
+
+// jitter: perturb points up to 1 unit; preserve endpoints and use seed for determinism
+const jittered = new Polygon([[0, 0], [10, 0], [20, 0]], false);
+jittered.jitter(1, { preserveEndpoints: true, seed: 42 });
+
+// Experimental: getSkeleton() emits a runtime warning and is not robust. Use at your own risk.
+// const skel = somePoly.getSkeleton();
+```
+
+**Note:** Unit tests were added for `createRectangle()`, `densify()`, `sparsify()`, and `jitter()` to ensure expected behavior.
+
 ## Testing
 
 Run the comprehensive test suite to verify all functionality:
@@ -147,3 +182,11 @@ The test suite includes 67 tests covering Point, Line, and Polygon classes with 
 - `Polygon` can represent both polygons and polylines (open or closed).
 - Use `clipTo()` for clipping polygons or polylines against other polygons.
 - Use `merge()` and `optimize()` to combine and clean up multiple rings.
+- `getSkeleton()` is experimental and not robust; it may be removed in a future release. The method emits a runtime `console.warn()` when invoked to indicate this instability. Use at your own risk.
+- New methods: `densify()`, `sparsify()`, and `jitter()` were added to help resample and perturb polygon geometry (useful for preprocessing, smoothing, and artistic effects).
+
+## Experimental / Deprecated ⚠️
+
+- `Polygon.getSkeleton()` — Experimental straight-skeleton implementation. The algorithm is not robust for complex or degenerate polygons and may produce unexpected results. It now emits a runtime `console.warn()` to make callers aware that this API is unstable. It is **likely to be removed** in a future release. If you need a reliable skeleton implementation consider using a dedicated library and/or opening an issue to discuss stabilization.
+
+For release notes and details, see `CHANGELOG.md`.

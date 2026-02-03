@@ -358,6 +358,82 @@ runner.describe('Polygon', () => {
     runner.assertEqual(poly.bbox, bbox);
   });
 
+  // ---- New tests for recently added methods ----
+  runner.test('createRectangle positions and closure (top-left)', () => {
+    const rect = Polygon.createRectangle(new Point(0,0), new Point(10,4), 0);
+    runner.assertEqual(rect.pts.length, 1);
+    // closed ring: 4 corners + duplicated first at end
+    runner.assertEqual(rect.pts[0].length, 5);
+    runner.assertAlmostEqual(rect.pts[0][0].x, 0, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][0].y, 0, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][1].x, 10, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][1].y, 0, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][2].x, 10, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][2].y, 4, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][3].x, 0, 1e-10);
+    runner.assertAlmostEqual(rect.pts[0][3].y, 4, 1e-10);
+    runner.assertTrue(rect.pts[0][0].equals(rect.pts[0][4]));
+  });
+
+  runner.test('createRectangle rotation about center', () => {
+    const rect = Polygon.createRectangle(new Point(0,0), new Point(2,2), Math.PI/2);
+    // Expect corners rotated 90deg about center (1,1)
+    const expected = [
+      {x:2, y:0}, {x:2, y:2}, {x:0, y:2}, {x:0, y:0}
+    ];
+    for (let i = 0; i < 4; i++) {
+      runner.assertAlmostEqual(rect.pts[0][i].x, expected[i].x, 1e-10);
+      runner.assertAlmostEqual(rect.pts[0][i].y, expected[i].y, 1e-10);
+    }
+  });
+
+  runner.test('densify splits long segments correctly', () => {
+    const poly = new Polygon([ [0,0], [10,0] ], false);
+    poly.densify(3);
+    // expect 5 points: original endpoints + 3 inserted
+    runner.assertEqual(poly.pts[0].length, 5);
+    // ensure no segment longer than 3
+    const dists = [];
+    for (let i = 0; i < poly.pts[0].length - 1; i++) {
+      dists.push(poly.pts[0][i].distanceTo(poly.pts[0][i+1]));
+    }
+    const maxDist = Math.max(...dists);
+    runner.assert(maxDist <= 3 + 1e-9);
+  });
+
+  runner.test('sparsify removes close points and preserves endpoints', () => {
+    const poly = new Polygon([ [0,0], [1,0], [2,0], [3,0], [10,0] ], false);
+    poly.sparsify(2);
+    // should keep first, a middle at 2, and last
+    runner.assertEqual(poly.pts[0].length, 3);
+    runner.assertAlmostEqual(poly.pts[0][0].x, 0, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][1].x, 2, 1e-10);
+    runner.assertAlmostEqual(poly.pts[0][2].x, 10, 1e-10);
+  });
+
+  runner.test('jitter preserves endpoints when requested and is deterministic with seed', () => {
+    const pts = [ [0,0], [10,0], [20,0] ];
+    const poly1 = new Polygon(pts, false);
+    const poly2 = new Polygon(pts, false);
+
+    poly1.jitter(1, { preserveEndpoints: true, seed: 123 });
+    poly2.jitter(1, { preserveEndpoints: true, seed: 123 });
+
+    // endpoints unchanged
+    runner.assertTrue(poly1.pts[0][0].equals(new Point(0,0)));
+    runner.assertTrue(poly1.pts[0][2].equals(new Point(20,0)));
+    // middle point changed and deterministic
+    runner.assertFalse(poly1.pts[0][1].equals(new Point(10,0)));
+    runner.assertTrue(poly1.pts[0][1].equals(poly2.pts[0][1]));
+  });
+
+  runner.test('jitter maintains closure for closed rings', () => {
+    const poly = new Polygon([ [0,0], [10,0], [10,10], [0,0] ], true);
+    poly.jitter(2, { seed: 42 });
+    const ring = poly.pts[0];
+    runner.assertTrue(ring[0].equals(ring[ring.length - 1]));
+  });
+
 });
 
 export default runner;

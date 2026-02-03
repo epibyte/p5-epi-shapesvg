@@ -138,6 +138,47 @@ export default class Point {
 
     return new Point(rotatedX, rotatedY);
   }
+  
+  /**
+   * Vector-like helpers for convenience in geometric algorithms
+   */
+  add(pt) {
+    return new Point(this.x + pt.x, this.y + pt.y);
+  }
+
+  sub(pt) {
+    return new Point(this.x - pt.x, this.y - pt.y);
+  }
+
+  mul(s) {
+    return new Point(this.x * s, this.y * s);
+  }
+
+  div(s) {
+    return new Point(this.x / s, this.y / s);
+  }
+
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  lengthSq() {
+    return this.x * this.x + this.y * this.y;
+  }
+
+  normalize() {
+    const l = this.length();
+    if (l === 0) return new Point(0, 0);
+    return new Point(this.x / l, this.y / l);
+  }
+
+  dot(pt) {
+    return this.x * pt.x + this.y * pt.y;
+  }
+
+  perp() {
+    return new Point(-this.y, this.x);
+  }
 
   // Check if a point is (just) in area
   /**
