@@ -1,10 +1,40 @@
 # Plan: Stabilize clipping, ownership, and release hygiene
 
-Status: Draft  
+Status: In progress (PR 1–2 complete, released as `v0.0.22`)  
 Last updated: 2026-11-08  
 Scope: `p5-epi-shapesvg`  
-Target release: `v0.1.0`  
+Next release: `v0.1.0` recommended (reconcile with the `v0.0.22` release)  
 Compatibility baseline: sketches pinned to `v0.0.21`
+
+## Progress
+
+### Released: `v0.0.22` (2026-11-08)
+
+PR 1 — Safety net:
+- P0-1: runner sets `process.exitCode = 1` on failure, guarded for browsers.
+- P0-2: `test/polygon-clip-tests.js` added and included in `run-all-tests.js` totals.
+- P0-3: single-ring `clipLine` inside/outside/crossing and basic `clipTo` regression tests. Tangent case deferred to P0-9.
+- Each suite now prints its own summary; `run-all-tests.js` only aggregates.
+
+PR 2 — Low-risk correctness fixes:
+- P1-2: `createArc()` rotates about the arc center.
+- P1-3: `addPoint()` creates a first ring on an empty polygon.
+- P0-12: `isOverlapping()` returns `false` when either polygon is empty.
+- P1-1: `insertIntersectionPoint()` compares squared distance against squared tolerance; named `EPSILON_DIST`, `EPSILON_SQ_DIST`, `EPSILON_AREA`.
+- P1-4: `clipPts()` debug log removed, double rotation fixed, zero-length segments guarded.
+- Regression tests added for every fix.
+
+Docs/release:
+- README, CHANGELOG, AGENTS, and relevant JSDoc updated for the above.
+- `dist/` rebuilt and smoke-tested; package version set to `0.0.22`; tag `v0.0.22` pushed.
+- `v0.0.21` still resolves to `d5136f9` locally and on `origin`.
+
+### Next session
+
+1. PR 3 — Clipping semantics (P0-6 … P0-10): record D1 (even-odd), rewrite `clipLine()`, add multi-ring and degenerate tests, recheck `clipTo`/`outerHull`/`isOverlapping`, and correct the README's multi-ring claim.
+2. PR 4 — Ownership and union hardening (P0-4, P0-11, P0-13).
+3. PR 5 — Docs, build tooling/CI, dist smoke test, release checklist, final version and tag.
+4. Decide next tag: `v0.1.0` (plan default, recommended for the clipping behavior change) or `v0.0.23`.
 
 ## Context
 
@@ -449,19 +479,19 @@ Add these to `test/polygon-clip-tests.js` unless noted.
 
 ## Definition of done
 
-- [ ] `npm test` exits non-zero on failure and all suites are included.
+- [x] `npm test` exits non-zero on failure and all suites are included.
 - [ ] Multi-ring clip behavior is defined, implemented, and tested in both inside/outside modes.
-- [ ] `clipTo` has automated tests for crossing, contained, disjoint, empty, and multi-ring cases.
+- [ ] `clipTo` has automated tests for crossing, contained, disjoint, empty, and multi-ring cases. (crossing/contained/disjoint/empty done; multi-ring pending)
 - [ ] `outerHull` has geometric assertions, not `length >= 0`.
 - [ ] Mutating a public result does not mutate its inputs.
-- [ ] Empty polygons are safe for `isOverlapping`, `clipTo`, and `addPoint`.
-- [ ] `createArc` rotates around its center.
-- [ ] Epsilon comparisons are dimensionally correct.
-- [ ] No debug `console.log` remains in library code.
-- [ ] README, JSDoc, CHANGELOG, and AGENTS match the code.
-- [ ] `dist/` is rebuilt and smoke-tested.
-- [ ] `package.json`, CHANGELOG, and the `v0.1.0` tag agree.
-- [ ] `v0.0.21` still resolves to its original commit and `dist` blob.
+- [x] Empty polygons are safe for `isOverlapping`, `clipTo`, and `addPoint`.
+- [x] `createArc` rotates around its center.
+- [x] Epsilon comparisons are dimensionally correct.
+- [x] No debug `console.log` remains in library code.
+- [ ] README, JSDoc, CHANGELOG, and AGENTS match the code. (multi-ring claim still pending PR 3)
+- [x] `dist/` is rebuilt and smoke-tested.
+- [x] `package.json`, CHANGELOG, and the `v0.0.22` tag agree. (revisit for the next release)
+- [x] `v0.0.21` still resolves to its original commit and `dist` blob.
 
 ## Risks and mitigations
 
