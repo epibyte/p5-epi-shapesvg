@@ -18,7 +18,7 @@ Dependency-free ESM geometry library (`Point`, `Line`, `Polygon`) for p5.js and 
 - `node test/polygon-clip-tests.js` — clipping regression suite (included in `npm test`, no npm script yet).
 - No lint, formatter, typecheck, CI workflow, or lockfile exists; `package.json` declares no dependencies. Do not invent commands for them.
 - Build: `npx rollup -c` (per `rollup.config.mjs`). Rollup and `@rollup/plugin-node-resolve` are not declared in `package.json`, so install them first; there is no npm `build` script.
-- `CHANGELOG.md` uses an `Unreleased` section; current package version is `1.1.0`. CDN URLs are pinned to git tags.
+- `CHANGELOG.md` uses an `Unreleased` section; current package version is `0.0.22`. CDN URLs are pinned to git tags.
 
 ## Testing gotchas
 - The runner is custom, dependency-free, and synchronous: `describe()`/`test()` execute immediately on import. Keep tests synchronous; async functions are not awaited.

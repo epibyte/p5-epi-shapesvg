@@ -22,4 +22,4 @@
 - `Polygon` distance and area tolerances are now named constants: `EPSILON_DIST`, `EPSILON_SQ_DIST`, and `EPSILON_AREA`.
 
 ### Notes
-- Version bumped to `1.1.0` to reflect added features and documentation updates.
+- Package version set to `0.0.22` to match the `v0.0.22` release tag.
