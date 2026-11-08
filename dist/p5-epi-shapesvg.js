@@ -349,6 +349,13 @@ var EpiShapeSvg = (function (exports) {
     }
   }
 
+  // Linear distance tolerance shared by point deduplication.
+  const EPSILON_DIST = 1e-6;
+  // Squared form for comparisons against squared distances.
+  const EPSILON_SQ_DIST = EPSILON_DIST * EPSILON_DIST;
+  // Area tolerance for overlap checks (units²).
+  const EPSILON_AREA = 1e-9;
+
   /**
    * Polygon: Represents one or more polylines (rings), which can be open or closed.
    * Used for polygons, polylines, and collections of lines.
@@ -404,12 +411,15 @@ var EpiShapeSvg = (function (exports) {
     }
 
     /**
-     * Adds a Point to the last ring.
+     * Adds a Point to the last ring, creating a first ring when the polygon is empty.
      * @param {Point} pt
      * @returns {Polygon}
      */
     addPoint(pt) {
       pt = pt instanceof Point ? pt : new Point(pt);
+      if (this.pts.length === 0) {
+        this.pts.push([]);
+      }
       this.pts[this.pts.length-1].push(pt);
       // update bbox
       this.calcBBox();
@@ -497,7 +507,7 @@ var EpiShapeSvg = (function (exports) {
      * @param {Point} dim - Width (x) and height (y) of the ellipse
      * @param {number} startAngle - Start angle (radians)
      * @param {number} stopAngle - Stop angle (radians)
-     * @param {number|null} [rotation=null] - Optional rotation (radians)
+     * @param {number|null} [rotation=null] - Optional rotation (radians) applied about `center`
      * @returns {Polygon}
      */
     static createArc(center, dim, startAngle, stopAngle, rotation = null) {
@@ -517,9 +527,9 @@ var EpiShapeSvg = (function (exports) {
           center.y + (dim.y / 2) * Math.sin(angle)
         );
 
-        // Apply manual rotation if required
+        // Apply manual rotation if required (around the arc center)
         if (rotation) {
-          pt = pt.rotate(rotation);
+          pt = pt.rotate(rotation, center);
         }
         pts.push(pt);
       }
@@ -826,21 +836,23 @@ var EpiShapeSvg = (function (exports) {
     /**
      * (Deprecated) Clips a polyline (array of Points) against the polygon boundary. Use clipTo() instead.
      * @param {Point[]} ptsArr
-     * @param {number|null} [rotation=null]
+     * @param {number|null} [rotation=null] - Rotation (radians) applied to the input points
      * @returns {Polygon}
      */
     clipPts(ptsArr, rotation = null) {
       const segmentPoly = new Polygon();
+
+      // Rotate the input points once; interpolated points then live in the same space.
+      const pts = ptsArr.map(p => {
+        const pt = p instanceof Point ? p : new Point(p);
+        return rotation ? pt.rotate(rotation) : pt;
+      });
+
       let currentSegment = [];
       let segmentStarted = false;
 
-      for (let i = 0; i < ptsArr.length; i++) {
-        let pt = ptsArr[i];
-
-        // Apply rotation if required
-        if (rotation) {
-          pt = pt.rotate(rotation);
-        }
+      for (let i = 0; i < pts.length; i++) {
+        const pt = pts[i];
 
         if (this.isPointIn(pt)) {
           if (!segmentStarted) {
@@ -849,19 +861,18 @@ var EpiShapeSvg = (function (exports) {
 
             // Look backwards to try to catch intersection point
             if (i > 0) {
-              let qt = ptsArr[i - 1];
-              if (rotation) qt = qt.rotate(rotation);
-
+              const qt = pts[i - 1];
               const len = Math.hypot(qt.x - pt.x, qt.y - pt.y);
-              const df = 1 / len;
 
-              for (let f = df; f < 1; f += df) {
-                let interpPt = qt.lerp(pt, f);
-                if (rotation) interpPt = interpPt.rotate(rotation);
+              if (len > 0) {
+                const df = 1 / len;
 
-                if (this.isPointIn(interpPt)) {
-                  currentSegment.push(interpPt);
-                  break;
+                for (let f = df; f < 1; f += df) {
+                  const interpPt = qt.lerp(pt, f);
+                  if (this.isPointIn(interpPt)) {
+                    currentSegment.push(interpPt);
+                    break;
+                  }
                 }
               }
             }
@@ -880,7 +891,6 @@ var EpiShapeSvg = (function (exports) {
 
       // Finish any open segment
       if (segmentStarted) {
-        console.log("Adding final segment:", currentSegment);
         segmentPoly.addPtsArr(currentSegment);
       }
 
@@ -955,17 +965,15 @@ var EpiShapeSvg = (function (exports) {
     }
 
     /**
-     * Inserts a point into an array if not already present (within epsilon).
+     * Inserts a point into an array if not already present (within `EPSILON_DIST`).
      * @param {Point[]} arr
      * @param {Point} newPt
      * @returns {boolean}
      */
     insertIntersectionPoint(arr, newPt) {
-      const epsilon = 1e-6;
-      
       for (const p of arr) {
-        // if (dist(p.x, p.y, newPt.x, newPt.y) < epsilon) {
-        if (p.distanceSqTo(newPt) < epsilon) {
+        // Compare squared distance against a squared tolerance.
+        if (p.distanceSqTo(newPt) < EPSILON_SQ_DIST) {
           return false;
         }
       }
@@ -1039,12 +1047,15 @@ var EpiShapeSvg = (function (exports) {
     /**
      * Returns true if this polygon and `other` have a real area overlap.
      * Touching at edges or vertices does NOT count as overlap.
+     * Returns false when either polygon is empty.
      * @param {Polygon} other
      * @param {number} [epsilon=1e-9] - area tolerance (areas <= epsilon treated as zero)
      * @returns {boolean}
      */
-    isOverlapping(other, epsilon = 1e-9) {
+    isOverlapping(other, epsilon = EPSILON_AREA) {
       if (!other || !(other instanceof Polygon)) return false;
+      // An empty polygon has no area to overlap with anything.
+      if (this.pts.length === 0 || other.pts.length === 0) return false;
 
       // Compute intersection regions from both sides (this clipped to other, and other clipped to this)
       const interA = this.clipTo(other, true);
