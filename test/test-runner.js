@@ -141,6 +141,11 @@ export default class TestRunner {
       console.log(`✅ All tests passed!`);
     }
     console.log(`${'='.repeat(50)}`);
+    // Fail the process so `npm test` (and direct suite runs) exit non-zero.
+    // Guarded because `process` does not exist in the browser playground.
+    if (this.failed > 0 && typeof process !== 'undefined') {
+      process.exitCode = 1;
+    }
     return this.failed === 0;
   }
 }

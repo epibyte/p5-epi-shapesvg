@@ -141,4 +141,6 @@ runner.describe('Line', () => {
 
 });
 
+runner.run();
+
 export default runner;

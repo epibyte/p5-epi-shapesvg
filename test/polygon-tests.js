@@ -436,4 +436,6 @@ runner.describe('Polygon', () => {
 
 });
 
+runner.run();
+
 export default runner;

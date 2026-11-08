@@ -187,4 +187,6 @@ runner.describe('Point', () => {
 
 });
 
+runner.run();
+
 export default runner;
