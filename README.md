@@ -32,7 +32,7 @@ Represents a line segment between two `Point` objects.
 Represents one or more polylines (rings), which can be open or closed. Used for polygons, polylines, and collections of lines.
 
 **Instance Methods:**
-- `addPoint(pt)` — add a point to the last ring
+- `addPoint(pt)` — add a point to the last ring; creates the first ring when the polygon is empty
 - `addPtsArr(ptsArr, closePath)` — add an array of points as a new ring
 - `closeLastPath()` — close the last ring if open
 - `copy()` — create a deep copy of the polygon
@@ -41,7 +41,7 @@ Represents one or more polylines (rings), which can be open or closed. Used for 
 - `clipTo(otherPoly, inside)` — clip this polygon against another (inside or outside)
 - `clipLine(p1, p2, inside)` — clip a line segment against the polygon
 - `isPointIn(pt)` — test if a point is inside the polygon
-- `isOverlapping(other, epsilon)` — test if this polygon has a real area overlap with another (edge/vertex touching does NOT count as overlap)
+- `isOverlapping(other, epsilon)` — test if this polygon has a real area overlap with another (edge/vertex touching does NOT count as overlap; empty polygons return `false`)
 - `length()` — compute total length of all rings
 - `densify(maxLen)` — insert points so no segment is longer than `maxLen`; mutates the polygon and returns `this`.
 - `sparsify(minLen)` — remove points closer than `minLen`; preserves endpoints and closure rules; mutates the polygon and returns `this`.
@@ -55,9 +55,9 @@ Represents one or more polylines (rings), which can be open or closed. Used for 
 - `calcBBox()` — compute and cache polygon bounding box in `polygon.bbox` as `{minX,minY,maxX,maxY,width,height}`; called automatically when polygon is created or mutated
 
 **Static Methods:**
-- `Polygon.createNEdges(nEdges, radius, center, rotation)` — create a regular polygon. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
+- `Polygon.createNEdge(nEdges, radius, center, rotation)` — create a regular polygon. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
 - `Polygon.createStar(nEdges, radiusOuter, radiusInner, center, rotation)` — create a star shape. `center` can be a `Point`, `{x, y}` object, or `[x, y]` array.
-- `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment. Both `center` and `dim` can be a `Point`, `{x, y}` object, or `[x, y]` array. Returns an open path by default.
+- `Polygon.createArc(center, dim, startAngle, stopAngle, rotation)` — create an arc/ellipse segment. Both `center` and `dim` can be a `Point`, `{x, y}` object, or `[x, y]` array. `rotation` is in radians and is applied about `center`. Returns an open path by default.
 - `Polygon.createRectangle(pos, dim, rotation)` — create a rectangle positioned by the **top-left** corner `pos` with dimensions `dim` (width x, height y). `rotation` is in radians and is applied about the rectangle center.
 - `Polygon.outerHull(...polys)` — returns the union/outer hull of multiple polygons
 
@@ -171,11 +171,14 @@ Run the comprehensive test suite to verify all functionality:
 # Run all tests
 node test/run-all-tests.js
 
+# Run the clipping regression suite on its own
+node test/polygon-clip-tests.js
+
 # Or using npm
 npm test
 ```
 
-The test suite includes 67 tests covering Point, Line, and Polygon classes with edge cases, mathematical accuracy, and geometric operations.
+The suite covers `Point`, `Line`, `Polygon`, and clipping behavior, including single-ring and empty-input regression cases. See the summary output for the current test count.
 
 ## Notes
 - All classes are designed for use with p5.js and SVG workflows.

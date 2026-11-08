@@ -63,7 +63,7 @@ export default class Polygon {
   }
 
   /**
-   * Adds a Point to the last ring.
+   * Adds a Point to the last ring, creating a first ring when the polygon is empty.
    * @param {Point} pt
    * @returns {Polygon}
    */
@@ -159,7 +159,7 @@ export default class Polygon {
    * @param {Point} dim - Width (x) and height (y) of the ellipse
    * @param {number} startAngle - Start angle (radians)
    * @param {number} stopAngle - Stop angle (radians)
-   * @param {number|null} [rotation=null] - Optional rotation (radians)
+   * @param {number|null} [rotation=null] - Optional rotation (radians) applied about `center`
    * @returns {Polygon}
    */
   static createArc(center, dim, startAngle, stopAngle, rotation = null) {
@@ -488,7 +488,7 @@ export default class Polygon {
   /**
    * (Deprecated) Clips a polyline (array of Points) against the polygon boundary. Use clipTo() instead.
    * @param {Point[]} ptsArr
-   * @param {number|null} [rotation=null]
+   * @param {number|null} [rotation=null] - Rotation (radians) applied to the input points
    * @returns {Polygon}
    */
   clipPts(ptsArr, rotation = null) {
@@ -617,7 +617,7 @@ export default class Polygon {
   }
 
   /**
-   * Inserts a point into an array if not already present (within epsilon).
+   * Inserts a point into an array if not already present (within `EPSILON_DIST`).
    * @param {Point[]} arr
    * @param {Point} newPt
    * @returns {boolean}
@@ -699,6 +699,7 @@ export default class Polygon {
   /**
    * Returns true if this polygon and `other` have a real area overlap.
    * Touching at edges or vertices does NOT count as overlap.
+   * Returns false when either polygon is empty.
    * @param {Polygon} other
    * @param {number} [epsilon=1e-9] - area tolerance (areas <= epsilon treated as zero)
    * @returns {boolean}
