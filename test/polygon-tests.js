@@ -434,6 +434,89 @@ runner.describe('Polygon', () => {
     runner.assertTrue(ring[0].equals(ring[ring.length - 1]));
   });
 
+  // ---- PR 2: low-risk correctness fixes ----
+
+  runner.test('createArc rotates around the arc center', () => {
+    const center = new Point(10, 10);
+    const arc = Polygon.createArc(center, new Point(4, 4), 0, Math.PI / 2, Math.PI / 2);
+
+    // Unrotated endpoints are (12,10) and (10,12); rotated 90° about (10,10)
+    // they become (10,12) and (8,10).
+    runner.assertAlmostEqual(arc.pts[0][0].x, 10, 1e-9);
+    runner.assertAlmostEqual(arc.pts[0][0].y, 12, 1e-9);
+    runner.assertAlmostEqual(arc.pts[0][arc.pts[0].length - 1].x, 8, 1e-9);
+    runner.assertAlmostEqual(arc.pts[0][arc.pts[0].length - 1].y, 10, 1e-9);
+  });
+
+  runner.test('addPoint creates a first ring on an empty polygon and updates bbox', () => {
+    const poly = new Polygon();
+    poly.addPoint(new Point(3, 4));
+
+    runner.assertEqual(poly.pts.length, 1);
+    runner.assertEqual(poly.pts[0].length, 1);
+    runner.assertNotNull(poly.bbox);
+
+    poly.addPoint({ x: 6, y: 8 });
+    runner.assertAlmostEqual(poly.bbox.minX, 3, 1e-9);
+    runner.assertAlmostEqual(poly.bbox.minY, 4, 1e-9);
+    runner.assertAlmostEqual(poly.bbox.maxX, 6, 1e-9);
+    runner.assertAlmostEqual(poly.bbox.maxY, 8, 1e-9);
+  });
+
+  runner.test('isOverlapping returns false for an empty polygon in either position', () => {
+    const square = new Polygon([
+      new Point(0, 0), new Point(10, 0), new Point(10, 10), new Point(0, 10)
+    ], true);
+    const empty = new Polygon();
+
+    runner.assertFalse(square.isOverlapping(empty));
+    runner.assertFalse(empty.isOverlapping(square));
+  });
+
+  runner.test('insertIntersectionPoint compares distance, not squared distance', () => {
+    const poly = new Polygon();
+    const points = [new Point(0, 0)];
+
+    // 1e-4 apart is farther than the 1e-6 tolerance and must be kept.
+    runner.assertTrue(poly.insertIntersectionPoint(points, new Point(1e-4, 0)));
+    runner.assertEqual(points.length, 2);
+
+    // 5e-7 apart is within the 1e-6 tolerance and must be deduplicated.
+    runner.assertFalse(poly.insertIntersectionPoint(points, new Point(5e-7, 0)));
+    runner.assertEqual(points.length, 2);
+  });
+
+  runner.test('clipPts rotates input once and does not double-rotate interpolated points', () => {
+    const rect = new Polygon([
+      new Point(0, 0), new Point(10, 0), new Point(10, 10), new Point(0, 10)
+    ], true);
+
+    // Rotated 90° these points run from (-10,5) to (5,5), entering the mask at (0,5).
+    const clipped = rect.clipPts([new Point(5, 10), new Point(5, -5)], Math.PI / 2);
+
+    runner.assertEqual(clipped.pts.length, 1);
+    const first = clipped.pts[0][0];
+    runner.assertTrue(rect.isPointIn(first));
+    runner.assertAlmostEqual(first.x, 0, 0.2);
+    runner.assertAlmostEqual(first.y, 5, 1e-9);
+  });
+
+  runner.test('clipPts does not print debug output', () => {
+    const rect = new Polygon([
+      new Point(0, 0), new Point(10, 0), new Point(10, 10), new Point(0, 10)
+    ], true);
+
+    const originalLog = console.log;
+    let logged = false;
+    console.log = () => { logged = true; };
+    try {
+      rect.clipPts([new Point(2, 5), new Point(8, 5)]);
+    } finally {
+      console.log = originalLog;
+    }
+    runner.assertFalse(logged);
+  });
+
 });
 
 runner.run();
