@@ -8,7 +8,8 @@ This directory contains a comprehensive test suite for the geometry classes (Poi
 - `point-tests.js` - Tests for Point class
 - `line-tests.js` - Tests for Line class  
 - `polygon-tests.js` - Tests for Polygon class
-- `run-all-tests.js` - Runs all test suites and provides summary
+- `polygon-clip-tests.js` - Clipping regression tests (`clipLine`, `clipTo`, empty inputs)
+- `run-all-tests.js` - Imports all suites, aggregates totals, and sets the exit code
 
 ## Running Tests
 
@@ -22,7 +23,10 @@ node test/run-all-tests.js
 node test/point-tests.js
 node test/line-tests.js
 node test/polygon-tests.js
+node test/polygon-clip-tests.js
 ```
+
+Each suite calls `runner.run()` itself and prints its own summary. `npm test` exits non-zero when any test fails.
 
 ### In Browser
 You can also run tests in the browser by importing the test files as ES modules:
@@ -68,6 +72,13 @@ You can also run tests in the browser by importing the test files as ES modules:
 - Polygon operations (merge, optimize)
 - Static factory methods (createNEdge, createStar)
 - Boolean operations (outerHull)
+- Low-risk fixes (arc center rotation, empty inputs, epsilon handling)
+
+### Polygon Clipping Tests
+- Single-ring `clipLine` inside/outside/crossing cases
+- Basic `clipTo` behavior
+- Empty receiver and empty mask cases
+- Multi-ring masks are covered by PR 3
 
 ## Test Runner Features
 
@@ -98,8 +109,9 @@ To add tests for a new class:
 1. Create a new test file (e.g., `new-class-tests.js`)
 2. Import the test runner and your class
 3. Create test cases using the runner's methods
-4. Export the runner instance
-5. Add to `run-all-tests.js`
+4. Call `runner.run()` at the end of the suite
+5. Export the runner instance
+6. Import it in `run-all-tests.js` and include its totals
 
 Example:
 ```javascript
@@ -114,6 +126,8 @@ runner.describe('NewClass', () => {
     runner.assertTrue(instance.isValid());
   });
 });
+
+runner.run();
 
 export default runner;
 ```
